@@ -1,0 +1,29 @@
+# Idea project files
+.idea
+.idea_modules
+*.iml
+*.ipr
+*.iws
+
+# Emacs
+*~
+*#
+.#*
+.ensime
+.ensime_lucene
+TAGS
+tags
+
+# mvn
+target
+logs
+
+# Eclipse project files
+.classpath
+.externalToolBuilders/
+.project
+.scala_dependencies
+
+# sbt
+.lib
+project/target
