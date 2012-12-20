@@ -2,11 +2,11 @@ organization := "com.thenewmotion"
 
 name := "scynapse"
 
-scalaVersion := "2.10.0-RC2"
+scalaVersion := "2.10.0-RC3"
 
 libraryDependencies ++= Seq(
-  "org.axonframework" % "axon-core" % "2.0-m3",
-  "org.specs2"        % "specs2_2.10.0-RC2" % "1.12.2" % "test"
+  "org.axonframework" % "axon-core" % "2.0-rc1",
+  "org.specs2"        %% "specs2" % "1.12.3" % "test"
 )
 
 releaseSettings

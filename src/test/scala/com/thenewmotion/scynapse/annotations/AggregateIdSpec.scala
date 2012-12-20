@@ -8,13 +8,14 @@ class AggregateIdSpec extends Specification {
     "affect field only" in {
       val cls = Test("id", 0).getClass
 
-      cls.getDeclaredFields
-        .filter(f => f.getAnnotation(classOf[TargetAggregateIdentifier]) != null)
-        .aka("annotated fields") must haveSize(1)
-
       cls.getDeclaredMethods
         .filter(m => m.getAnnotation(classOf[TargetAggregateIdentifier]) != null)
-        .aka("annotated methods") must haveSize(0)
+        .aka("annotated methods") must haveSize(1)
+
+      cls.getDeclaredFields
+        .filter(f => f.getAnnotation(classOf[TargetAggregateIdentifier]) != null)
+        .aka("annotated fields") must haveSize(0)
+
     }
   }
 
