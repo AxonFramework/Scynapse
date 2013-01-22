@@ -5,7 +5,7 @@ name := "scynapse"
 scalaVersion := "2.10.0-RC5"
 
 libraryDependencies ++= Seq(
-  "org.axonframework" % "axon-core" % "2.0-rc2",
+  "org.axonframework" % "axon-core" % "2.0-rc3",
   "org.specs2"        %% "specs2" % "1.13" % "test"
 )
 
