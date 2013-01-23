@@ -19,6 +19,8 @@ trait EventMatchers {
     }
   }
 
+  def noEvents = org.axonframework.test.matchers.Matchers.noEvents()
+
   def allPayloadsOf(items: Any*) = {
     payloadsMatching(listWithAllOf(
       (items map isEqualTo): _*
