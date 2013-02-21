@@ -5,12 +5,13 @@ import sbtrelease.ReleasePlugin._
 import scala._
 
 object ScynapseBuild extends Build {
+  import Deps._
 
   lazy val basicSettings = seq(
     organization := "com.thenewmotion",
     description  := "Scala add-on to Axon framework",
 
-    scalaVersion := "2.10.0",
+    scalaVersion := V.scala,
     resolvers ++= Seq(
       "Releases"  at "http://nexus.thenewmotion.com/content/repositories/releases",
       "Snapshots" at "http://nexus.thenewmotion.com/content/repositories/snapshots"
@@ -55,16 +56,30 @@ object ScynapseBuild extends Build {
     .settings(moduleSettings: _*)
     .settings(
       libraryDependencies ++= Seq(
-        "org.axonframework" %  "axon-core"    % "2.0",
-        "org.specs2"        %% "specs2"       % "1.13" % "test"))
+        axonCore,
+        reflect,
+        specs % "test"))
 
   lazy val scynapseTest = Project("scynapse-test", file("scynapse-test"))
     .dependsOn(scynapseCore)
     .settings(moduleSettings: _*)
     .settings(
       libraryDependencies ++= Seq(
-        "org.axonframework" % "axon-test"     % "2.0",
-        "org.hamcrest"      % "hamcrest-core" % "1.3",
-        "org.specs2"        %% "specs2"       % "1.13"
+        axonTest,
+        hamcrest,
+        specs
       ))
+}
+
+object Deps {
+  object V {
+    val scala = "2.10.0"
+    val axon  = "2.0"
+  }
+
+  val axonCore = "org.axonframework" %  "axon-core"     % V.axon
+  val axonTest = "org.axonframework" %  "axon-test"     % V.axon
+  val hamcrest = "org.hamcrest"      % "hamcrest-core"  % "1.3"
+  val specs    = "org.specs2"        %% "specs2"        % "1.14"
+  val reflect  = "org.scala-lang"    %  "scala-reflect" % V.scala
 }

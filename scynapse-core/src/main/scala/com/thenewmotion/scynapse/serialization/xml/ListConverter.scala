@@ -5,7 +5,7 @@ import com.thoughtworks.xstream.converters.collections.AbstractCollectionConvert
 import com.thoughtworks.xstream.io.{HierarchicalStreamReader, HierarchicalStreamWriter}
 import com.thoughtworks.xstream.converters.{UnmarshallingContext, MarshallingContext}
 
-class ListXStreamConverter(mapper: Mapper) extends AbstractCollectionConverter(mapper) {
+class ListConverter(mapper: Mapper) extends AbstractCollectionConverter(mapper) {
 
   override def canConvert(cls: Class[_]) = classOf[::[_]] == cls
 

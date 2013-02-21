@@ -4,5 +4,5 @@ import org.axonframework.serializer.xml.{XStreamSerializer => AxonXStreamSeriali
 
 class XStreamSerializer extends AxonXStreamSerializer {
   getXStream.alias("list", classOf[::[_]])
-  getXStream.registerConverter(new ListXStreamConverter(getXStream.getMapper))
+  getXStream.registerConverter(new ListConverter(getXStream.getMapper))
 }
