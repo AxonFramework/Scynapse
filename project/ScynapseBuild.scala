@@ -57,7 +57,6 @@ object ScynapseBuild extends Build {
     .settings(
       libraryDependencies ++= Seq(
         axonCore,
-        reflect,
         specs % "test"))
 
   lazy val scynapseTest = Project("scynapse-test", file("scynapse-test"))
@@ -81,5 +80,4 @@ object Deps {
   val axonTest = "org.axonframework" %  "axon-test"     % V.axon
   val hamcrest = "org.hamcrest"      % "hamcrest-core"  % "1.3"
   val specs    = "org.specs2"        %% "specs2"        % "1.14"
-  val reflect  = "org.scala-lang"    %  "scala-reflect" % V.scala
 }
