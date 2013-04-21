@@ -1,10 +1,10 @@
 package com.thenewmotion.scynapse.serialization.xml
 
-import org.specs2.Specification
 import com.thoughtworks.xstream.XStream
 import com.thoughtworks.xstream.io.xml.DomDriver
 import xml.{XML, NodeSeq}
-
+import org.scalatest.FlatSpec
+import org.scalatest.matchers.MustMatchers
 
 object SomeEnum extends Enumeration {
   val A, B = Value
@@ -17,41 +17,31 @@ object OtherEnum extends Enumeration {
 case class Simple(field: SomeEnum.Value)
 case class Complex(some: SomeEnum.Value, other: OtherEnum.Value)
 
-class EnumSerializerSpec extends Specification { def is =
+class EnumSerializerSpec extends FlatSpec with MustMatchers {
 
-  "Enumeration value serialized"                    ^
-    "using names"                         ! sut().name ^
-    "and enclosing object's class name"   ! sut().cls  ^
-    "which allows multiple types to be deserialized"    ! sut().cmplx ^
-    end
+  def xStream = {
+    val x = new XStream(new DomDriver())
+    x.registerConverter(new EnumConverter)
+    x
+  }
 
-  case class sut() {
-    val xStream = {
-      val x = new XStream(new DomDriver())
-      x.registerConverter(new EnumConverter)
-      x
-    }
+  "Enumeration value converter" should "serialize by name" in {
+    val xml = xStream.toXML(Simple(SomeEnum.A))
+    (XML.loadString(xml) \\ "field" \ "@name").text must equal ("A")
+  }
 
-    def name = {
-      val xml = xStream.toXML(Simple(SomeEnum.A))
-      XML.loadString(xml) must \("field", "name" -> "A")
-    }
+  it should "include enum full class name" in {
+    val xml = xStream.toXML(Simple(SomeEnum.B))
+    val res = XML.loadString(xml)
+    (res \\ "field" \ "@class").text must equal("scala.Enumeration$Val")
+    (res \\ "field" \ "@in").text must equal("com.thenewmotion.scynapse.serialization.xml.SomeEnum")
+  }
 
-    def cls = {
-      val xml = xStream.toXML(Simple(SomeEnum.B))
-      XML.loadString(xml) must \("field", "in" -> "com.thenewmotion.scynapse.serialization.xml.SomeEnum")
-    }
-
-    def vl = {
-      val xml = xStream.toXML(Simple(SomeEnum.B))
-      XML.loadString(xml) must \("field", "class" -> "scala.Enumeration$Val")
-    }
-
-    def cmplx = {
+  it should "allows multiple types to be deserialized" in {
       val origin = Complex(SomeEnum.A, OtherEnum.P)
       val xml = xStream.toXML(origin)
       val deserialized = xStream.fromXML(xml).asInstanceOf[Complex]
-      deserialized mustEqual origin
-    }
+      deserialized must equal(origin)
   }
+
 }
