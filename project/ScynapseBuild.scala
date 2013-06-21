@@ -22,9 +22,9 @@ object ScynapseBuild extends Build {
       "-unchecked",
       "-deprecation"
     )
-  )
+  ) ++ releaseSettings
 
-  lazy val moduleSettings = basicSettings ++ releaseSettings ++ seq(
+  lazy val moduleSettings = basicSettings ++ seq(
     publishTo <<= version { (v: String) =>
       val nexus = "http://nexus.thenewmotion.com/content/repositories/"
       if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "snapshots-public")
@@ -42,14 +42,8 @@ object ScynapseBuild extends Build {
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
   )
 
-  lazy val noPublishing = seq(
-    publish := (),
-    publishLocal := ()
-  )
-
   lazy val root = Project("root", file("."))
     .settings(basicSettings: _*)
-    .settings(noPublishing: _*)
     .aggregate(scynapseCore, scynapseTest)
 
   lazy val scynapseCore = Project("scynapse-core", file("scynapse-core"))
