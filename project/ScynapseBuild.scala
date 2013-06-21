@@ -48,7 +48,7 @@ object ScynapseBuild extends Build {
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
   )
 
-  lazy val root = Project("root", file("."))
+  lazy val root = Project("scynapse-root", file("."))
     .settings(basicSettings: _*)
     .aggregate(scynapseCore, scynapseTest)
 
