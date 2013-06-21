@@ -21,7 +21,13 @@ object ScynapseBuild extends Build {
       "-encoding", "UTF-8",
       "-unchecked",
       "-deprecation"
-    )
+    ),
+
+    publishTo <<= version { (v: String) =>
+      val nexus = "http://nexus.thenewmotion.com/content/repositories/"
+      if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "snapshots-public")
+      else                             Some("releases"  at nexus + "releases-public")
+    }
   ) ++ releaseSettings
 
   lazy val moduleSettings = basicSettings ++ seq(
