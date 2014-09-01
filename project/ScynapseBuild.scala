@@ -72,12 +72,12 @@ object ScynapseBuild extends Build {
 
 object Deps {
   object V {
-    val scala = "2.10.3"
-    val axon  = "2.1.1"
+    val scala = "2.11.2"
+    val axon  = "2.3.1"
   }
 
   val axonCore  = "org.axonframework" %  "axon-core"      % V.axon
   val axonTest  = "org.axonframework" %  "axon-test"      % V.axon
   val hamcrest  = "org.hamcrest"      %  "hamcrest-core"  % "1.3"
-  val scalaTest = "org.scalatest"     %% "scalatest"      % "1.9.1"
+  val scalaTest = "org.scalatest"     %% "scalatest"      % "2.2.1"
 }
