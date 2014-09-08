@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-
+import bintray.Plugin._
 import sbtrelease.ReleasePlugin._
 import scala._
 
@@ -11,31 +11,21 @@ object ScynapseBuild extends Build {
     organization := "com.thenewmotion",
     description  := "Scala add-on to Axon framework",
 
+    licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
+
+    bintray.Keys.bintrayOrganization := Some("thenewmotion"),
+
     scalaVersion := V.scala,
-    resolvers ++= Seq(
-      "Releases"  at "http://nexus.thenewmotion.com/content/repositories/releases",
-      "Snapshots" at "http://nexus.thenewmotion.com/content/repositories/snapshots"
-    ),
 
     scalacOptions := Seq(
       "-encoding", "UTF-8",
       "-unchecked",
       "-deprecation"
-    ),
+    )
 
-    publishTo <<= version { (v: String) =>
-      val nexus = "http://nexus.thenewmotion.com/content/repositories/"
-      if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "snapshots-public")
-      else                             Some("releases"  at nexus + "releases-public")
-    }
-  ) ++ releaseSettings
+  ) ++ releaseSettings ++ bintraySettings
 
   lazy val moduleSettings = basicSettings ++ seq(
-    publishTo <<= version { (v: String) =>
-      val nexus = "http://nexus.thenewmotion.com/content/repositories/"
-      if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "snapshots-public")
-      else                             Some("releases"  at nexus + "releases-public")
-    },
     publishMavenStyle := true,
     pomExtra :=
       <licenses>
@@ -44,8 +34,7 @@ object ScynapseBuild extends Build {
           <url>http://www.apache.org/licenses/LICENSE-2.0</url>
           <distribution>repo</distribution>
         </license>
-      </licenses>,
-    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+      </licenses>
   )
 
   lazy val root = Project("scynapse-root", file("."))
