@@ -14,6 +14,7 @@ object ScynapseBuild extends Build {
     licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
 
     bintray.Keys.bintrayOrganization := Some("thenewmotion"),
+    resolvers += bintray.Opts.resolver.mavenRepo("thenewmotion"),
 
     scalaVersion := V.scala,
 
@@ -62,7 +63,7 @@ object ScynapseBuild extends Build {
 object Deps {
   object V {
     val scala = "2.11.2"
-    val axon  = "2.3.1"
+    val axon  = "2.3.2"
   }
 
   val axonCore  = "org.axonframework" %  "axon-core"      % V.axon
