@@ -20,6 +20,7 @@ private[scynapse] object SubscriptionManager {
   sealed trait Cmd
   case class Subscribe(ref: ActorRef) extends Cmd
   case class Unsubscribe(ref: ActorRef) extends Cmd
+  case class CheckSubscription(ref: ActorRef) extends Cmd
 
   def props(eventBus: AxonEventBus) = Props(new SubscriptionManager(eventBus))
 }
@@ -52,5 +53,8 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
         case None =>
           sender ! Failure(SubscriptionError(s"$ref is not subscribed to $eventBus"))
       }
+
+    case CheckSubscription(ref) =>
+      sender ! subscriptions.contains(ref)
   }
 }

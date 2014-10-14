@@ -20,15 +20,14 @@ class AxonExtensionSpec extends ScynapseAkkaSpecBase {
   behavior of "An Axon <-> Akka EventBus bridge"
 
   it should "forward events to subscribed actor" in new Ctx {
-      axonAkkaBridge subscribe probe.ref
-      eventBus publish eventMessage("hi")
-      probe expectMsg "hi"
-  }
-
-  it should "forward events to subscribed actor2" in new Ctx {
     axonAkkaBridge subscribe probe.ref
     eventBus publish eventMessage("hi")
     probe expectMsg "hi"
+  }
+
+  it should "check if actors are subscribed" in new Ctx {
+    axonAkkaBridge subscribe probe.ref
+    axonAkkaBridge isSubscribed probe.ref shouldBe true
   }
 
   it should "not send events to unsubscribed actors" in new Ctx {

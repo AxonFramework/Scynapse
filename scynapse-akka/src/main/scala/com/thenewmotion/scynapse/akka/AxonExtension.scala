@@ -24,8 +24,9 @@ object AxonEventBusExtension extends ExtensionId[AxonEventBusExtension]
 private[scynapse] trait Subscriptions {
   def eventBus: AxonEventBus
 
-  def subscribe(ref: ActorRef)
-  def unsubscribe(ref: ActorRef)
+  def subscribe(ref: ActorRef): Try[_]
+  def unsubscribe(ref: ActorRef): Try[_]
+  def isSubscribed(ref: ActorRef): Boolean
 }
 
 // TODO:
@@ -48,5 +49,8 @@ class AxonEventBusExtension(system: ActorSystem) extends Extension {
 
     def unsubscribe(ref: ActorRef) =
       Await.result(sendManagerCmd(Unsubscribe(ref)), timeout.duration)
+
+    def isSubscribed(ref: ActorRef) =
+      Await.result((manager ? CheckSubscription(ref)).mapTo[Boolean], timeout.duration)
   }
 }
