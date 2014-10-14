@@ -11,6 +11,7 @@
 .#*
 .ensime
 .ensime_lucene
+.ensime_cache
 TAGS
 tags
 
