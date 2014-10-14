@@ -29,9 +29,7 @@ private[scynapse] trait Subscriptions {
   def isSubscribed(ref: ActorRef): Boolean
 }
 
-// TODO:
-// - unsubscribe on actor termination
-//
+
 class AxonEventBusExtension(system: ActorSystem) extends Extension {
 
   def forEventBus(bus: AxonEventBus) = new Subscriptions {
@@ -41,7 +39,7 @@ class AxonEventBusExtension(system: ActorSystem) extends Extension {
     val eventBus: AxonEventBus = bus
     val manager = system.actorOf(SubscriptionManager.props(eventBus))
 
-    def sendManagerCmd(cmd: SubscriptionManager.Cmd): Future[Try[_]] =
+    private[this] def sendManagerCmd(cmd: SubscriptionManager.Cmd): Future[Try[_]] =
       (manager ? cmd).mapTo[Try[_]]
 
     def subscribe(ref: ActorRef) =

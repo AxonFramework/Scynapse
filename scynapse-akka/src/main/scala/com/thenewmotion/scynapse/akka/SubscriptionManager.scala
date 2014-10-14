@@ -41,6 +41,7 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
           val listener = new ActorEventListener(ref)
           eventBus subscribe listener
           subscriptions += ref -> listener
+          context watch ref
           sender ! Success("OK")
       }
 
@@ -49,10 +50,14 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
         case Some(el) =>
           eventBus unsubscribe el
           subscriptions -= ref
+          context unwatch ref
           sender ! Success("OK")
         case None =>
           sender ! Failure(SubscriptionError(s"$ref is not subscribed to $eventBus"))
       }
+
+    case Terminated(ref) =>
+      self ! Unsubscribe(ref)
 
     case CheckSubscription(ref) =>
       sender ! subscriptions.contains(ref)

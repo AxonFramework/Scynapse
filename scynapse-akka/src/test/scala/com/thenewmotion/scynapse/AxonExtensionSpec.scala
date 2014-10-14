@@ -2,6 +2,7 @@ package com.thenewmotion.scynapse.akka
 
 import akka.actor._
 import akka.testkit.{TestProbe}
+import scala.util.{Try, Success, Failure}
 import org.axonframework.domain.GenericEventMessage
 import org.axonframework.eventhandling.SimpleEventBus
 
@@ -31,10 +32,10 @@ class AxonExtensionSpec extends ScynapseAkkaSpecBase {
   }
 
   it should "not send events to unsubscribed actors" in new Ctx {
-      axonAkkaBridge subscribe probe.ref
-      axonAkkaBridge unsubscribe probe.ref
-      eventBus publish eventMessage("not for actor")
-      probe expectNoMsg
+    axonAkkaBridge subscribe probe.ref
+    axonAkkaBridge unsubscribe probe.ref
+    eventBus publish eventMessage("not for actor")
+    probe expectNoMsg
   }
 
   it should "not subscribe actors more than once" in new Ctx {
@@ -43,5 +44,12 @@ class AxonExtensionSpec extends ScynapseAkkaSpecBase {
     eventBus publish eventMessage("only one message")
     probe expectMsg "only one message"
     probe expectNoMsg
+  }
+
+  it should "unsubsribe actors on termination" in new Ctx {
+    axonAkkaBridge subscribe probe.ref
+    system.stop(probe.ref)
+    Thread.sleep(200) // wait for async inner stuff to occur
+    axonAkkaBridge isSubscribed probe.ref shouldBe false
   }
 }
