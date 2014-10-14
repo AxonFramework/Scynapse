@@ -55,6 +55,7 @@ object ScynapseBuild extends Build {
     .settings(
       libraryDependencies ++= Seq(
         akkaActor,
+        akkaTestkit % "test",
         scalaTest % "test"))
 
   lazy val scynapseTest = Project("scynapse-test", file("scynapse-test"))
@@ -75,9 +76,10 @@ object Deps {
     val akka = "2.3.6"
   }
 
-  val axonCore  = "org.axonframework" %  "axon-core"      % V.axon
-  val axonTest  = "org.axonframework" %  "axon-test"      % V.axon
-  val akkaActor = "com.typesafe.akka" %% "akka-actor"     % V.akka
-  val hamcrest  = "org.hamcrest"      %  "hamcrest-core"  % "1.3"
-  val scalaTest = "org.scalatest"     %% "scalatest"      % "2.2.1"
+  val axonCore    = "org.axonframework" %  "axon-core"      % V.axon
+  val axonTest    = "org.axonframework" %  "axon-test"      % V.axon
+  val akkaActor   = "com.typesafe.akka" %% "akka-actor"     % V.akka
+  val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"   % V.akka
+  val hamcrest    = "org.hamcrest"      %  "hamcrest-core"  % "1.3"
+  val scalaTest   = "org.scalatest"     %% "scalatest"      % "2.2.2"
 }

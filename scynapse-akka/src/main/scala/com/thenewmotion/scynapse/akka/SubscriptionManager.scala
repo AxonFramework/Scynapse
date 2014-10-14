@@ -1,8 +1,12 @@
 package com.thenewmotion.scynapse.akka
 
 import akka.actor._
+import scala.util.{Success, Failure}
 import org.axonframework.domain.EventMessage
 import org.axonframework.eventhandling.{EventBus => AxonEventBus, EventListener}
+
+
+case class SubscriptionError(msg: String) extends RuntimeException(msg)
 
 
 private[scynapse] class ActorEventListener(ref: ActorRef) extends EventListener {
@@ -13,8 +17,9 @@ private[scynapse] class ActorEventListener(ref: ActorRef) extends EventListener 
 
 
 private[scynapse] object SubscriptionManager {
-  case class Subscribe(ref: ActorRef)
-  case class Unsubscribe(ref: ActorRef)
+  sealed trait Cmd
+  case class Subscribe(ref: ActorRef) extends Cmd
+  case class Unsubscribe(ref: ActorRef) extends Cmd
 
   def props(eventBus: AxonEventBus) = Props(new SubscriptionManager(eventBus))
 }
@@ -30,11 +35,12 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
     case Subscribe(ref) =>
       subscriptions.get(ref) match {
         case Some(el) =>
-          log.debug("{} is already subscribed to {}", ref, eventBus)
+          sender ! Failure(SubscriptionError(s"$ref is already subscribed to $eventBus"))
         case None =>
           val listener = new ActorEventListener(ref)
           eventBus subscribe listener
           subscriptions += ref -> listener
+          sender ! Success("OK")
       }
 
     case Unsubscribe(ref) =>
@@ -42,8 +48,9 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
         case Some(el) =>
           eventBus unsubscribe el
           subscriptions -= ref
+          sender ! Success("OK")
         case None =>
-          log.info("{} is not subscribed to anything", ref)
+          sender ! Failure(SubscriptionError(s"$ref is not subscribed to $eventBus"))
       }
   }
 }
