@@ -71,3 +71,12 @@ For Scynapse test:
     )
 
 
+# Development of Scynapse
+
+For the development of scynapse, you need [SBT](http://www.scala-sbt.org)
+The build is setup in the project folder and with 
+
+    sbt publishLocal
+    
+You will build and publish the packages to your local machine. 
+
