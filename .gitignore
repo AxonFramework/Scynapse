@@ -2,6 +2,7 @@
 .idea
 .idea_modules
 *.iml
+**/*.iml
 *.ipr
 *.iws
 
@@ -28,3 +29,5 @@ logs
 # sbt
 .lib
 project/target
+.settings/
+events/
