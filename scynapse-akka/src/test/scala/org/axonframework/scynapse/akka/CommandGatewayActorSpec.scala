@@ -2,8 +2,8 @@ package org.axonframework.scynapse.akka
 
 import akka.actor._
 import akka.pattern.ask
-import akka.testkit.{TestProbe}
-import scala.concurrent.Await
+import akka.testkit.{TestProbe, TestKit, ImplicitSender}
+import scala.concurrent.{Await, TimeoutException}
 import org.axonframework.commandhandling.{
   CommandBus, SimpleCommandBus,
   CommandHandler, CommandMessage}
@@ -22,6 +22,13 @@ class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
       new CommandHandler[T] {
         def handle(cmd: CommandMessage[T], uow: UnitOfWork): AnyRef =
           Result(f(cmd.getPayload))
+      }
+
+    def nullHandler[T]: CommandHandler[T] =
+      new CommandHandler[T] {
+        def handle(cmd: CommandMessage[T], uow: UnitOfWork) = {
+          null
+        }
       }
 
     val commandBus = new SimpleCommandBus()
@@ -49,5 +56,14 @@ class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
   it should "receive command result back" in new Ctx {
     val resFuture = (cmdGateway ? AddNumbersCmd(5, 4)).mapTo[Result]
     Await.result(resFuture, timeout.duration) shouldBe Result(9)
+  }
+
+  it should "not receive any result if cmd handler returns null" in new Ctx {
+    case class NullCmd()
+    commandBus.subscribe(classOf[NullCmd].getName, nullHandler[NullCmd])
+
+    an [TimeoutException] should be thrownBy {
+      Await.result(cmdGateway ? NullCmd(), timeout.duration)
+    }
   }
 }

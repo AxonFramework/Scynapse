@@ -36,6 +36,8 @@ class CommandGatewayActor(axonCommandBus: CommandBus) extends Actor with ActorLo
 
   def receive = {
     case cmd =>
-      dispatchMessage(asCommandMessage(cmd)) pipeTo sender
+      val respondTo = sender
+      for(x <- dispatchMessage(asCommandMessage(cmd)) if x != null)
+        respondTo ! x
   }
 }
