@@ -29,7 +29,7 @@ class CommandGatewayActor(axonCommandBus: CommandBus) extends Actor with ActorLo
 
   implicit val executor: ExecutionContext = ExecutionContext.Implicits.global
 
-  def asCommandMessage(cmd: Any, meta: CommandMeta = Map.empty) = {
+  def asCommandMessage(cmd: Any, meta: CommandMeta = Map.empty): CommandMessage[_] = {
     val msg = GenericCommandMessage.asCommandMessage(cmd)
     msg.withMetaData(meta.asJava)
   }
@@ -41,9 +41,15 @@ class CommandGatewayActor(axonCommandBus: CommandBus) extends Actor with ActorLo
   }
 
   def receive = {
-    case cmd =>
+    case cmdMessage: CommandMessage[_] =>
       val respondTo = sender
-      for(x <- dispatchMessage(asCommandMessage(cmd)) if x != null)
+      for(x <- dispatchMessage(cmdMessage) if x != null)
         respondTo ! x
+
+    case WithMeta(cmd, meta) =>
+      self forward asCommandMessage(cmd, meta)
+
+    case cmd =>
+      self forward asCommandMessage(cmd)
   }
 }

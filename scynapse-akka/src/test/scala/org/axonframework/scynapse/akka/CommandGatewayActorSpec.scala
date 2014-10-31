@@ -4,6 +4,8 @@ import akka.actor._
 import akka.pattern.ask
 import akka.testkit.{TestProbe, TestKit, ImplicitSender}
 import scala.concurrent.{Await, TimeoutException}
+import org.scalatest.Entry
+import org.axonframework.domain.{MetaData => AxonMetaData}
 import org.axonframework.commandhandling.{
   CommandBus, SimpleCommandBus,
   CommandHandler, CommandMessage}
@@ -18,10 +20,10 @@ class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
 
     val probe = TestProbe()
 
-    def cmdHandler[T, R <: Any](f: T => R): CommandHandler[T] =
+    def cmdHandler[T, R <: Any](f: CommandMessage[T] => R): CommandHandler[T] =
       new CommandHandler[T] {
         def handle(cmd: CommandMessage[T], uow: UnitOfWork): AnyRef =
-          Result(f(cmd.getPayload))
+          Result(f(cmd))
       }
 
     def nullHandler[T]: CommandHandler[T] =
@@ -34,10 +36,13 @@ class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
     val commandBus = new SimpleCommandBus()
 
     val addNumbersHandler =
-      cmdHandler { (cmd: AddNumbersCmd) => cmd.x + cmd.y }
+      cmdHandler { (msg: CommandMessage[AddNumbersCmd]) => {
+        val cmd = msg.getPayload
+        cmd.x + cmd.y
+      } }
 
     def forwardingHandler[T](ref: ActorRef) =
-      cmdHandler { (cmd: T) => ref ! cmd }
+      cmdHandler { (msg: CommandMessage[T]) => ref ! msg.getPayload }
 
     commandBus.subscribe(classOf[AddNumbersCmd].getName, addNumbersHandler)
     commandBus.subscribe(classOf[LogMessageCmd].getName,
@@ -62,8 +67,17 @@ class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
     case class NullCmd()
     commandBus.subscribe(classOf[NullCmd].getName, nullHandler[NullCmd])
 
-    an [TimeoutException] should be thrownBy {
-      Await.result(cmdGateway ? NullCmd(), timeout.duration)
-    }
+    cmdGateway.tell(NullCmd(), probe.ref)
+    probe expectNoMsg
+  }
+
+  it should "allow to pass command metadata" in new Ctx {
+    case class MetaCmd(data: String)
+    commandBus.subscribe(classOf[MetaCmd].getName,
+      cmdHandler { (msg: CommandMessage[MetaCmd]) =>
+        probe.ref ! msg.getMetaData
+      })
+    cmdGateway ! CommandGatewayActor.WithMeta(MetaCmd("hi"), Map("userId" -> 120))
+    probe.expectMsgType[AxonMetaData] should contain (Entry("userId", 120))
   }
 }
