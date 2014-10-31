@@ -1,27 +1,27 @@
-# Welcome to the Scynapse 
+# Welcome to the Scynapse
 
 Scynapse enables the use of Axon with Scala
 
-This version (0.2.8) works with Axon version 2.3.2 
+This version (0.2.8) works with Axon version 2.3.2
 
 ## A quick start in using scynapse (core)
 
 1) Setup a structure with an event store that makes use of the XStreamSerializer found in scynapse-core
 
-2) Create your aggregate root as 
+2) Create your aggregate root as
 
     class MyAggregateRoot extends AbstractAnnotatedAggregateRoot[MyIdentifier]
-    
+
       @AggregateIdentifier
       private var id : MyIdentifier = _
 
-3) Create your Commands and Events 
+3) Create your Commands and Events
 
 Note that Commands need an annotation in order to route them to the proper AggregateRoot instance using
-the @aggregateId annotation 
+the @aggregateId annotation
 
     case class MyCommand(@aggregateId myId: MyIdentifier, otherParam: String)
-    
+
 4) Have the Aggregate Root handle the commands that results in events
 
     @CommandHandler
@@ -36,17 +36,71 @@ the @aggregateId annotation
         someState = Some(e.otherParam)
       }
 
-6) Have event handlers in views build up specific state. 
+6) Have event handlers in views build up specific state.
 
 
-## Make use of akka actors for event listening
+## Integrate with Akka
+
+`scynapse-akka` module provides facilities that make it easier to
+integrate Axon components with Akka.
+
+### Subscribing actors to events
+
+`AxonEventBusExtension` allows to subscribe Akka actors to events
+published on Axon event bus.  It is implemented as an
+[Akka extension](http://doc.akka.io/docs/akka/2.3.6/scala/extending-akka.html)
+that manages event bus subscriptions.
+
+In order to subscribe an `ActorRef` to the event bus you should first
+initialize an `AxonAkkaBridge`. Here is an example(using Spring):
+
+    import org.axonframework.eventhandling.EventBus
+    import com.thenewmotion.scynapse.akka.AxonEventBusExtension
+
+    val eventBus = getBean("eventBus", classOf[EventBus])
+    val axonAkkaBridge = AxonEventBusExtension(actorSystem) forEventBus eventBus
+
+Then `axonAkkaBridge` can be used to subscribe actors to the Event bus:
+
+    val eventListener: ActorRef = context.actorOf(...)
+    axonAkkaBridge subscribe eventListener
+
+After that `eventListener` actor will receive all events published to
+the event bus as simple messages.
+
+To unsubscribe actor from the event bus:
+
+    axonAkkaBridge unsubscribe eventListener
+
+If actor is terminated unsubscription occurs automatically.
+
+
+### Sending commands from actors
+
+In order to make sending domain commands from Akka components easier a
+`CommandGatewayActor` was introduced. It is just a simple actor
+interface for the Axon `CommandBus` that dispatches all messages it
+receives to a command bus. A result returned by the command handler
+(if any) is sent back to the original command sender.
+
+Example usage (again, we're using Spring context here):
+
+    import org.axonframework.commandhandling.CommandBus
+    import com.thenewmotion.scynapse.akka.CommandGatewayActor
+
+    val commandBus = getBean("commandBus", classOf[CommandBus])
+    val cmdGateway = actorSystem.actorOf(CommandGatewayActor.props(commandBus))
+
+    ...
+
+    cmdGateway ! CreateOrder(...)
 
 
 
 ## Make use of scalatest to test your domain logic
 
-It's possible to make use of the Axon given -> when -> then test logic in scalatest and have matchers that work in scala style. 
-The test in the scynapse-test package shows best in what way this works. 
+It's possible to make use of the Axon given -> when -> then test logic in scalatest and have matchers that work in scala style.
+The test in the scynapse-test package shows best in what way this works.
 
 # Dependencies
 
@@ -57,7 +111,7 @@ For Scynapse core:
     libraryDependencies ++= Seq(
         "org.axonframework.scynapse"        %% "scynapse-core"           % 0.2.8
     )
-    
+
 For Scynapse akka:
 
     libraryDependencies ++= Seq(
@@ -74,9 +128,8 @@ For Scynapse test:
 # Development of Scynapse
 
 For the development of scynapse, you need [SBT](http://www.scala-sbt.org)
-The build is setup in the project folder and with 
+The build is setup in the project folder and with
 
     sbt publishLocal
-    
-You will build and publish the packages to your local machine. 
 
+You will build and publish the packages to your local machine.
