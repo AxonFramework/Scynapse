@@ -10,49 +10,62 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 
+/**
+  * The [[akka.actor.ExtensionId]] and [[akka.actor.ExtensionIdProvider]] for Axon extension
+  */
 object AxonEventBusExtension extends ExtensionId[AxonEventBusExtension]
-with ExtensionIdProvider {
+                             with ExtensionIdProvider {
 
-    override def createExtension(system: ExtendedActorSystem): AxonEventBusExtension =
-        new AxonEventBusExtension(system)
+  override def createExtension(system: ExtendedActorSystem): AxonEventBusExtension =
+    new AxonEventBusExtension(system)
 
-    def lookup(): this.type = this
+  def lookup(): this.type = this
 
 }
 
+/**
+  * Defines an interface to subscribe Akka actors to Axon event bus
+  */
+private[scynapse] trait AxonAkkaBridge {
+  def eventBus: AxonEventBus
 
-private[scynapse] trait Subscriptions {
-    def eventBus: AxonEventBus
-
-    def subscribe(ref: ActorRef): Try[_]
-
-    def unsubscribe(ref: ActorRef): Try[_]
-
-    def isSubscribed(ref: ActorRef): Boolean
+  def subscribe(ref: ActorRef): Try[_]
+  def unsubscribe(ref: ActorRef): Try[_]
+  def isSubscribed(ref: ActorRef): Boolean
 }
 
 
+/**
+  * Axon extension
+  *
+  * @param system The ActorSystem this extension belongs to
+  */
 class AxonEventBusExtension(system: ActorSystem) extends Extension {
 
-    def forEventBus(bus: AxonEventBus) = new Subscriptions {
+  /**
+    * Gets a "bridge" object providing interface to manage actors'
+    * subscriptions.
+    *
+    * @param bus [[org.axonframework.eventhandling.EventBus]]
+    * @return a [[com.thenewmotion.scynapse.akka.AxonAkkaBridge]]
+    */
+  def forEventBus(bus: AxonEventBus) = new AxonAkkaBridge {
+    import SubscriptionManager._
+    implicit val timeout = Timeout(1 second)
 
-        import SubscriptionManager._
+    val eventBus: AxonEventBus = bus
+    val manager = system.actorOf(SubscriptionManager.props(eventBus))
 
-        implicit val timeout = Timeout(1 second)
+    private[this] def sendManagerCmd(cmd: SubscriptionManager.Cmd): Future[Try[_]] =
+      (manager ? cmd).mapTo[Try[_]]
 
-        val eventBus: AxonEventBus = bus
-        val manager = system.actorOf(SubscriptionManager.props(eventBus))
+    def subscribe(ref: ActorRef) =
+      Await.result(sendManagerCmd(Subscribe(ref)), timeout.duration)
 
-        private[this] def sendManagerCmd(cmd: SubscriptionManager.Cmd): Future[Try[_]] =
-            (manager ? cmd).mapTo[Try[_]]
+    def unsubscribe(ref: ActorRef) =
+      Await.result(sendManagerCmd(Unsubscribe(ref)), timeout.duration)
 
-        def subscribe(ref: ActorRef) =
-            Await.result(sendManagerCmd(Subscribe(ref)), timeout.duration)
-
-        def unsubscribe(ref: ActorRef) =
-            Await.result(sendManagerCmd(Unsubscribe(ref)), timeout.duration)
-
-        def isSubscribed(ref: ActorRef) =
-            Await.result((manager ? CheckSubscription(ref)).mapTo[Boolean], timeout.duration)
-    }
+    def isSubscribed(ref: ActorRef) =
+      Await.result((manager ? CheckSubscription(ref)).mapTo[Boolean], timeout.duration)
+  }
 }

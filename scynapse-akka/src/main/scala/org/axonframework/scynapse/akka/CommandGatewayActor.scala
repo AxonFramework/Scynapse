@@ -18,6 +18,12 @@ object CommandGatewayActor {
     Props(new CommandGatewayActor(axonCommandBus))
 }
 
+
+/**
+  * Actor-based command gateway
+  *
+  * @param axonCommandBus [[org.axonframework.commandhandling.CommandBus]]
+  */
 class CommandGatewayActor(axonCommandBus: CommandBus) extends Actor with ActorLogging {
   import CommandGatewayActor._
 
