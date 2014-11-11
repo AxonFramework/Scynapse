@@ -34,6 +34,7 @@ object ScynapseBuild extends Build {
         publishArtifact in Test := false,
         pomIncludeRepository := { _ => false },
         pomExtra :=
+          <url>https://github.com/AxonFramework/Scynapse</url>
           <issueManagement>
               <system>YouTrack</system>
               <url>http://issues.axonframework.org</url>
