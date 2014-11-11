@@ -34,12 +34,6 @@ object ScynapseBuild extends Build {
         publishArtifact in Test := false,
         pomIncludeRepository := { _ => false },
         pomExtra :=
-          <licenses>
-              <license>
-                  <name>Apache License, Version 2.0</name>
-                  <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-              </license>
-          </licenses>
           <issueManagement>
               <system>YouTrack</system>
               <url>http://issues.axonframework.org</url>
