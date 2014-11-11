@@ -42,11 +42,13 @@ object ScynapseBuild extends Build {
               <url>git@github.com:AxonFramework/Scynapse.git</url>
               <connection>scm:git:git@github.com:AxonFramework/Scynapse.git</connection>
           </scm>
-          <developer>
-            <id>olger</id>
-            <name>Olger Warnier</name>
-              <email>olger@spectare.nl</email>
-          </developer>
+          <developers>
+            <developer>
+              <id>olger</id>
+              <name>Olger Warnier</name>
+                <email>olger@spectare.nl</email>
+            </developer>
+          </developers>
     )
 
     lazy val root = Project("scynapse-root", file("."))
