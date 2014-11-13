@@ -2,7 +2,7 @@
 
 Scynapse enables the use of Axon with Scala
 
-This version (0.2.8) works with Axon version 2.3.2
+This version (0.2.9) works with Axon version 2.3.2
 
 ## A quick start in using scynapse (core)
 
@@ -109,19 +109,19 @@ In order to make use of the the scynapse framework, you need to include in your 
 For Scynapse core:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-core"           % 0.2.8
+        "org.axonframework.scynapse"        %% "scynapse-core"           % 0.2.9
     )
 
 For Scynapse akka:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-akka"           % 0.2.8
+        "org.axonframework.scynapse"        %% "scynapse-akka"           % 0.2.9
     )
 
 For Scynapse test:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-test"           % 0.2.8 % "test"
+        "org.axonframework.scynapse"        %% "scynapse-test"           % 0.2.9 % "test"
     )
 
 
