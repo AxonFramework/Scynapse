@@ -29,6 +29,19 @@ the @aggregateId annotation
         apply(MyCommandHappened(id))
       }
 
+  Creation of a new aggregate root works with a command and event handler like this:
+  
+     @CommandHandler
+      def this(cmd: CreateMyAggregate) = {
+        this()
+        apply(MyAggregateCreated(cmd.myId, more values))
+      }
+    
+      @EventHandler
+      def on(e: MyAggregateCreated) = {
+        id = e.myId 
+      }
+
 5) Update the state (if required) in the aggregate root
 
       @EventHandler
