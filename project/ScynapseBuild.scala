@@ -86,9 +86,9 @@ object ScynapseBuild extends Build {
 object Deps {
 
     object V {
-        val scala = "2.11.2"
-        val axon = "2.3.2"
-        val akka = "2.3.6"
+        val scala = "2.11.5"
+        val axon = "2.4"
+        val akka = "2.3.9"
     }
 
     val axonCore = "org.axonframework" % "axon-core" % V.axon
