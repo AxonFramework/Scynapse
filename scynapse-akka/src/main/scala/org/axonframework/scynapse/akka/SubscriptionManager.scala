@@ -2,16 +2,28 @@ package org.axonframework.scynapse.akka
 
 import akka.actor._
 import scala.util.{Success, Failure}
-import org.axonframework.domain.EventMessage
+import org.axonframework.domain.{DomainEventMessage, EventMessage}
 import org.axonframework.eventhandling.{EventBus => AxonEventBus, EventListener}
 
 
 case class SubscriptionError(msg: String) extends RuntimeException(msg)
+case class SubscriptionPublishingError(msg: String, cause: Throwable) extends RuntimeException(msg, cause)
 
 
-private[scynapse] class ActorEventListener(ref: ActorRef) extends EventListener {
+private[scynapse] class ActorEventListenerPayloadPublisher(ref: ActorRef) extends EventListener {
     def handle(msg: EventMessage[_]) = {
         ref ! msg.getPayload
+    }
+}
+
+private[scynapse] class ActorEventListenerFullPublisher(ref: ActorRef) extends EventListener {
+    def handle(msg: EventMessage[_]) = {
+        try {
+            val evt = msg.asInstanceOf[DomainEventMessage[_]]
+            ref ! evt
+        } catch {
+            case ex: Exception => throw SubscriptionPublishingError(s"$msg could not be casted to DomainEventMessage", ex)
+        }
     }
 }
 
@@ -20,13 +32,23 @@ private[scynapse] object SubscriptionManager {
 
     sealed trait Cmd
 
-    case class Subscribe(ref: ActorRef) extends Cmd
+    // enum TypeOfEvent in a way that exhaustive checks are done with matching
+    sealed trait TypeOfEvent
+    object TypeOfEvent {
+        case object Full extends TypeOfEvent
+        case object Payload extends TypeOfEvent
+    }
 
+    //default value is Payload in order to keep backwards compatibility
+    case class Subscribe(ref: ActorRef, typeOfEvent: TypeOfEvent = TypeOfEvent.Payload) extends Cmd
+    
     case class Unsubscribe(ref: ActorRef) extends Cmd
 
     case class CheckSubscription(ref: ActorRef) extends Cmd
 
     def props(eventBus: AxonEventBus) = Props(new SubscriptionManager(eventBus))
+
+
 }
 
 
@@ -35,15 +57,18 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
 
     import SubscriptionManager._
 
-    var subscriptions: Map[ActorRef, ActorEventListener] = Map()
+    var subscriptions: Map[ActorRef, EventListener] = Map()
 
     def receive = {
-        case Subscribe(ref) =>
+        case Subscribe(ref, ofType) =>
             subscriptions.get(ref) match {
                 case Some(el) =>
                     sender ! Failure(SubscriptionError(s"$ref is already subscribed to $eventBus"))
                 case None =>
-                    val listener = new ActorEventListener(ref)
+                    val listener = ofType match {
+                        case TypeOfEvent.Payload => new ActorEventListenerPayloadPublisher(ref)
+                        case TypeOfEvent.Full => new ActorEventListenerFullPublisher(ref)
+                    }
                     eventBus subscribe listener
                     subscriptions += ref -> listener
                     context watch ref

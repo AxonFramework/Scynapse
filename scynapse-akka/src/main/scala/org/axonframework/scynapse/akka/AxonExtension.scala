@@ -30,6 +30,7 @@ private[scynapse] trait AxonAkkaBridge {
   def eventBus: AxonEventBus
 
   def subscribe(ref: ActorRef): Try[_]
+  def subscribeEvent(ref: ActorRef): Try[_]
   def unsubscribe(ref: ActorRef): Try[_]
   def isSubscribed(ref: ActorRef): Boolean
 }
@@ -47,7 +48,7 @@ class AxonEventBusExtension(system: ActorSystem) extends Extension {
     * subscriptions.
     *
     * @param bus [[org.axonframework.eventhandling.EventBus]]
-    * @return a [[com.thenewmotion.scynapse.akka.AxonAkkaBridge]]
+    * @return a [[org.axonframework.scynapse.akka.AxonAkkaBridge]]
     */
   def forEventBus(bus: AxonEventBus) = new AxonAkkaBridge {
     import SubscriptionManager._
@@ -59,8 +60,20 @@ class AxonEventBusExtension(system: ActorSystem) extends Extension {
     private[this] def sendManagerCmd(cmd: SubscriptionManager.Cmd): Future[Try[_]] =
       (manager ? cmd).mapTo[Try[_]]
 
+    /**
+     * subscribe to the eventbus and the actor will receive only the typed payload of the events
+     * @param ref ActorRef that will receive the events
+     */
     def subscribe(ref: ActorRef) =
-      Await.result(sendManagerCmd(Subscribe(ref)), timeout.duration)
+      Await.result(sendManagerCmd(Subscribe(ref, TypeOfEvent.Payload)), timeout.duration)
+
+    /**
+     * subscribe to the eventbus and the actor will receive the full DomainEventMessage
+     * @see org.axonframework.domain.DomainEventMessage
+     * @param ref ActorRef that will receive the DomainEventMessages
+     */
+    def subscribeEvent(ref: ActorRef) =
+      Await.result(sendManagerCmd(Subscribe(ref, TypeOfEvent.Full)), timeout.duration)
 
     def unsubscribe(ref: ActorRef) =
       Await.result(sendManagerCmd(Unsubscribe(ref)), timeout.duration)

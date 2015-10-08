@@ -2,7 +2,7 @@
 
 Scynapse enables the use of Axon with Scala
 
-This version (0.4) works with Axon version 2.4
+This version (0.4.2) works with Axon version 2.4.2
 
 ## A quick start in using scynapse (core)
 
@@ -61,7 +61,7 @@ integrate Axon components with Akka.
 
 `AxonEventBusExtension` allows to subscribe Akka actors to events
 published on Axon event bus.  It is implemented as an
-[Akka extension](http://doc.akka.io/docs/akka/2.3.6/scala/extending-akka.html)
+[Akka extension](http://doc.akka.io/docs/akka/2.3.12/scala/extending-akka.html)
 that manages event bus subscriptions.
 
 In order to subscribe an `ActorRef` to the event bus you should first
@@ -122,19 +122,19 @@ In order to make use of the the scynapse framework, you need to include in your 
 For Scynapse core:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-core"           % 0.4
+        "org.axonframework.scynapse"        %% "scynapse-core"           % 0.4.2
     )
 
 For Scynapse akka:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-akka"           % 0.4
+        "org.axonframework.scynapse"        %% "scynapse-akka"           % 0.4.2
     )
 
 For Scynapse test:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-test"           % 0.4 % "test"
+        "org.axonframework.scynapse"        %% "scynapse-test"           % 0.4.2 % "test"
     )
 
 

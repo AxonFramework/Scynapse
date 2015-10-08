@@ -1,11 +1,34 @@
 package org.axonframework.scynapse.akka
 
+import java.util
+
 import akka.actor._
 import akka.testkit.{TestProbe}
+import org.joda.time.DateTime
 import scala.util.{Try, Success, Failure}
-import org.axonframework.domain.GenericEventMessage
+import org.axonframework.domain.{MetaData, DomainEventMessage, GenericEventMessage}
 import org.axonframework.eventhandling.SimpleEventBus
 
+class TestDomainEventMessage[T](payload: T) extends DomainEventMessage[T] {
+
+  override def withMetaData(metaData: util.Map[String, _]): DomainEventMessage[T] = ???
+
+  override def getAggregateIdentifier: AnyRef = ???
+
+  override def andMetaData(metaData: util.Map[String, _]): DomainEventMessage[T] = ???
+
+  override def getSequenceNumber: Long = 1
+
+  override def getTimestamp: DateTime = DateTime.now
+
+  override def getIdentifier: String = "domain-event-message-1"
+
+  override def getMetaData: MetaData = ???
+
+  override def getPayload: T = payload
+
+  override def getPayloadType: Class[_] = ???
+}
 
 class AxonExtensionSpec extends ScynapseAkkaSpecBase {
   trait Ctx {
@@ -14,15 +37,34 @@ class AxonExtensionSpec extends ScynapseAkkaSpecBase {
     def eventMessage[T](payload: T): GenericEventMessage[T] =
       new GenericEventMessage(payload)
 
+    def domainEventMessage[T](payload: T): DomainEventMessage[T] =
+      new TestDomainEventMessage[T](payload)
+
     val probe = TestProbe()
   }
 
   behavior of "An Axon <-> Akka EventBus bridge"
 
-  it should "forward events to subscribed actor" in new Ctx {
+  it should "forward payloads to subscribed actor" in new Ctx {
     axonAkkaBridge subscribe probe.ref
     eventBus publish eventMessage("hi")
     probe expectMsg "hi"
+  }
+
+  it should "forward full events to the subscribed actor" in new Ctx {
+    axonAkkaBridge subscribeEvent probe.ref
+    eventBus publish domainEventMessage("hi")
+    probe.expectMsgPF() {
+      case msg: TestDomainEventMessage[_] => if (msg.getSequenceNumber == 1l) true else false
+      case other => false
+    }
+  }
+
+  it should "throw an exception when there is a faulty event to be published" in new Ctx {
+    axonAkkaBridge subscribeEvent probe.ref
+    intercept[SubscriptionPublishingError] {
+      eventBus publish eventMessage("hi")
+    }
   }
 
   it should "check if actors are subscribed" in new Ctx {
