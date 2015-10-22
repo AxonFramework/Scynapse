@@ -1,0 +1,2 @@
+org.axonframework.scynapse.serialization.converters.ByteArrayToXmlElemConverter
+org.axonframework.scynapse.serialization.converters.XmlElemToByteArrayConverter
