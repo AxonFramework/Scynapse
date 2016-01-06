@@ -88,7 +88,7 @@ object Deps {
 
     object V {
         val scala = "2.11.7"
-        val axon = "2.4.2"
+        val axon = "2.4.3"
         val akka = "2.3.12"
     }
 

@@ -2,7 +2,7 @@
 
 Scynapse enables the use of Axon with Scala
 
-This version (0.4.2) works with Axon version 2.4.2
+This version (0.5.3) works with Axon version 2.4.3
 
 ## A quick start in using scynapse (core)
 
