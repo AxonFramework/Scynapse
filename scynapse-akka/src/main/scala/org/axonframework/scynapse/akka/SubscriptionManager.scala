@@ -19,10 +19,9 @@ private[scynapse] class ActorEventListenerPayloadPublisher(ref: ActorRef) extend
 private[scynapse] class ActorEventListenerFullPublisher(ref: ActorRef) extends EventListener {
     def handle(msg: EventMessage[_]) = {
         try {
-            val evt = msg.asInstanceOf[DomainEventMessage[_]]
-            ref ! evt
+            ref ! msg
         } catch {
-            case ex: Exception => throw SubscriptionPublishingError(s"$msg could not be casted to DomainEventMessage", ex)
+            case ex: Exception => throw SubscriptionPublishingError(s"$msg could not be sent to Actor ${ref.path}", ex)
         }
     }
 }
