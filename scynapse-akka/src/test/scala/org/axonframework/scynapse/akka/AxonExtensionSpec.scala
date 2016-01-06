@@ -31,6 +31,7 @@ class TestDomainEventMessage[T](payload: T) extends DomainEventMessage[T] {
 }
 
 class AxonExtensionSpec extends ScynapseAkkaSpecBase {
+
   trait Ctx {
     val eventBus = new SimpleEventBus()
     val axonAkkaBridge = AxonEventBusExtension(system) forEventBus eventBus
@@ -57,13 +58,6 @@ class AxonExtensionSpec extends ScynapseAkkaSpecBase {
     probe.expectMsgPF() {
       case msg: TestDomainEventMessage[_] => if (msg.getSequenceNumber == 1l) true else false
       case other => false
-    }
-  }
-
-  it should "throw an exception when there is a faulty event to be published" in new Ctx {
-    axonAkkaBridge subscribeEvent probe.ref
-    intercept[SubscriptionPublishingError] {
-      eventBus publish eventMessage("hi")
     }
   }
 
