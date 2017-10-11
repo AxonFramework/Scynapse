@@ -1,7 +1,7 @@
 package org.axonframework.scynapse.serialization.converters
 
 import java.nio.charset.Charset
-import org.axonframework.serializer.AbstractContentTypeConverter
+import org.axonframework.serialization.AbstractContentTypeConverter
 import scala.xml.Elem
 
 /**
