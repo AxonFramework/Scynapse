@@ -35,7 +35,7 @@ class CommandGatewayActor(axonCommandBus: CommandBus) extends Actor with ActorLo
   }
 
   def dispatchMessage[T](cmd: CommandMessage[T]): Future[Any] = {
-    val pc = new PromisingCallback[Any]
+    val pc = new PromisingCallback[T, Any]
     axonCommandBus.dispatch(cmd, pc)
     pc.future
   }

@@ -1,9 +1,9 @@
 package org.axonframework.scynapse.akka
 
 import akka.actor._
-import scala.util.{Success, Failure}
-import org.axonframework.domain.{DomainEventMessage, EventMessage}
-import org.axonframework.eventhandling.{EventBus => AxonEventBus, EventListener}
+
+import scala.util.{Failure, Success}
+import org.axonframework.eventhandling.{EventListener, EventMessage, EventBus => AxonEventBus}
 
 
 case class SubscriptionError(msg: String) extends RuntimeException(msg)
@@ -68,7 +68,8 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
                         case TypeOfEvent.Payload => new ActorEventListenerPayloadPublisher(ref)
                         case TypeOfEvent.Full => new ActorEventListenerFullPublisher(ref)
                     }
-                    eventBus subscribe listener
+                    //TODO check how eventbus impl works nowadays
+                    //eventBus.subscribe(listener)
                     subscriptions += ref -> listener
                     context watch ref
                     sender ! Success("OK")
@@ -77,7 +78,7 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
         case Unsubscribe(ref) =>
             subscriptions.get(ref) match {
                 case Some(el) =>
-                    eventBus unsubscribe el
+                    //eventBus.unsubscribe(el)
                     subscriptions -= ref
                     context unwatch ref
                     sender ! Success("OK")

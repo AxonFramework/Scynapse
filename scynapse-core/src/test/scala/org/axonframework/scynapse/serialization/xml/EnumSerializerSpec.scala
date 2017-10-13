@@ -2,9 +2,9 @@ package org.axonframework.scynapse.serialization.xml
 
 import com.thoughtworks.xstream.XStream
 import com.thoughtworks.xstream.io.xml.DomDriver
+
 import xml.XML
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.{FlatSpec, MustMatchers}
 
 object SomeEnum extends Enumeration {
     val A, B = Value

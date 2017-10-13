@@ -1,25 +1,23 @@
 package org.axonframework.scynapse.akka
 
-import java.util
+import java.time.Instant
 
-import akka.actor._
-import akka.testkit.{TestProbe}
-import org.joda.time.DateTime
-import scala.util.{Try, Success, Failure}
-import org.axonframework.domain.{MetaData, DomainEventMessage, GenericEventMessage}
-import org.axonframework.eventhandling.SimpleEventBus
+import akka.testkit.TestProbe
+import org.axonframework.eventhandling.{GenericEventMessage, SimpleEventBus}
+import org.axonframework.eventsourcing.DomainEventMessage
+import org.axonframework.messaging.MetaData
 
 class TestDomainEventMessage[T](payload: T) extends DomainEventMessage[T] {
 
-  override def withMetaData(metaData: util.Map[String, _]): DomainEventMessage[T] = ???
+  override def withMetaData(metaData: java.util.Map[String, _]): DomainEventMessage[T] = ???
 
-  override def getAggregateIdentifier: AnyRef = ???
+  override def getAggregateIdentifier: String = ???
 
-  override def andMetaData(metaData: util.Map[String, _]): DomainEventMessage[T] = ???
+  override def andMetaData(metaData: java.util.Map[String, _]): DomainEventMessage[T] = ???
 
   override def getSequenceNumber: Long = 1
 
-  override def getTimestamp: DateTime = DateTime.now
+  override def getTimestamp: Instant = Instant.now()
 
   override def getIdentifier: String = "domain-event-message-1"
 
@@ -27,7 +25,9 @@ class TestDomainEventMessage[T](payload: T) extends DomainEventMessage[T] {
 
   override def getPayload: T = payload
 
-  override def getPayloadType: Class[_] = ???
+  override def getPayloadType: Class[T] = ???
+
+  override def getType: String = ???
 }
 
 class AxonExtensionSpec extends ScynapseAkkaSpecBase {

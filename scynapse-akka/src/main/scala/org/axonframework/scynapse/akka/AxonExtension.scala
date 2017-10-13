@@ -3,9 +3,8 @@ package org.axonframework.scynapse.akka
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
-import scala.util.{Try, Success, Failure}
-import org.axonframework.domain.EventMessage
-import org.axonframework.eventhandling.{EventBus => AxonEventBus, EventListener}
+import scala.util.Try
+import org.axonframework.eventhandling.{EventBus => AxonEventBus}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 

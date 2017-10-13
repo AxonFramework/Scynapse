@@ -1,16 +1,14 @@
 package org.axonframework.scynapse.test
 
-import org.axonframework.eventsourcing.annotation.{AggregateIdentifier, AbstractAnnotatedAggregateRoot}
-import org.axonframework.test.Fixtures
-import org.axonframework.commandhandling.annotation.CommandHandler
-
+import org.axonframework.commandhandling.CommandHandler
+import org.axonframework.commandhandling.model.AggregateIdentifier
 import org.axonframework.scynapse.annotations._
+import org.axonframework.test.aggregate.{AggregateTestFixture, FixtureConfiguration}
+import org.scalatest.{FlatSpec, MustMatchers}
+import org.axonframework.commandhandling.model.AggregateLifecycle.apply
+import org.slf4j.LoggerFactory.getLogger
 
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
-
-
-class EventMatchersSpec extends FlatSpec with ShouldMatchers with EventMatchers {
+class EventMatchersSpec extends FlatSpec with MustMatchers with EventMatchers {
     "Event matchers" should "allow strict equality match" in new sut {
         fixture
           .given(new AnyRef) // no empty given allowed ???
@@ -34,10 +32,10 @@ class EventMatchersSpec extends FlatSpec with ShouldMatchers with EventMatchers 
 }
 
 trait sut {
-    val fixture = {
-        val f = Fixtures.newGivenWhenThenFixture(classOf[TestAggregate])
+    val fixture: FixtureConfiguration[TestAggregate] = {
+        val f = new AggregateTestFixture(classOf[TestAggregate])
         f.setReportIllegalStateChange(false)
-        f
+      f
     }
 }
 
@@ -50,7 +48,7 @@ case class DoPartial(@aggregateId id: String, a: String, b: Int, c: List[String]
 
 case class PartialDone(id: String, a: String, b: Int, c: List[String])
 
-class TestAggregate extends AbstractAnnotatedAggregateRoot[String] {
+class TestAggregate {
     @AggregateIdentifier
     private val id: String = "test"
 
