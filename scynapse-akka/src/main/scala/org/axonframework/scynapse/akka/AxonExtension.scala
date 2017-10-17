@@ -1,12 +1,21 @@
 package org.axonframework.scynapse.akka
 
+import java.util
+import java.util.function.BiFunction
+
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
+import org.axonframework.common.Registration
+
 import scala.util.Try
-import org.axonframework.eventhandling.{EventBus => AxonEventBus}
+import org.axonframework.eventhandling.{EventMessage, EventBus => AxonEventBus}
+import org.axonframework.messaging.{Message, MessageDispatchInterceptor}
+
+import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import collection.JavaConverters._
 
 
 /**
@@ -50,34 +59,48 @@ class AxonEventBusExtension(system: ActorSystem) extends Extension {
     * @return a [[org.axonframework.scynapse.akka.AxonAkkaBridge]]
     */
   def forEventBus(bus: AxonEventBus) = new AxonAkkaBridge {
-    import SubscriptionManager._
+//    import SubscriptionManager._
     implicit val timeout = Timeout(1 second)
-
     val eventBus: AxonEventBus = bus
-    val manager = system.actorOf(SubscriptionManager.props(eventBus))
+    var subscriptions: mutable.Map[ActorRef, Registration] = mutable.Map()
 
-    private[this] def sendManagerCmd(cmd: SubscriptionManager.Cmd): Future[Try[_]] =
-      (manager ? cmd).mapTo[Try[_]]
+    val manager = system.actorOf(SubscriptionManager.props(eventBus))
 
     /**
      * subscribe to the eventbus and the actor will receive only the typed payload of the events
      * @param ref ActorRef that will receive the events
      */
-    def subscribe(ref: ActorRef) =
-      Await.result(sendManagerCmd(Subscribe(ref, TypeOfEvent.Payload)), timeout.duration)
+    def subscribe(ref: ActorRef) = {
+      Try {
+        val registration = bus.registerDispatchInterceptor(new DispatchToAkkaInterceptor[EventMessage[_]](ref))
+        subscriptions += ((ref, registration))
+      }
+    }
 
     /**
      * subscribe to the eventbus and the actor will receive the full DomainEventMessage
      * @see org.axonframework.domain.DomainEventMessage
      * @param ref ActorRef that will receive the DomainEventMessages
      */
-    def subscribeEvent(ref: ActorRef) =
-      Await.result(sendManagerCmd(Subscribe(ref, TypeOfEvent.Full)), timeout.duration)
+    def subscribeEvent(ref: ActorRef) = {
+      Try {
+        val registration = bus.registerDispatchInterceptor(new DispatchToAkkaInterceptor[EventMessage[_]](ref))
+        subscriptions.+=((ref, registration))
+      }
+    }
 
     def unsubscribe(ref: ActorRef) =
-      Await.result(sendManagerCmd(Unsubscribe(ref)), timeout.duration)
+      subscriptions.remove(ref).map(r => {
+          Try(r.close())
+      }).get
+
 
     def isSubscribed(ref: ActorRef) =
-      Await.result((manager ? CheckSubscription(ref)).mapTo[Boolean], timeout.duration)
+      subscriptions.contains(ref)
+      //Await.result((manager ? CheckSubscription(ref)).mapTo[Boolean], timeout.duration)
   }
+}
+
+class DispatchToAkkaInterceptor[T <: Message[_]](dispatchTo: ActorRef) extends MessageDispatchInterceptor[T] {
+  override def handle(messages: util.List[T]): BiFunction[Integer, T, T]= ???
 }
