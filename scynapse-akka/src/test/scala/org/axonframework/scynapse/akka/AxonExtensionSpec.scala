@@ -101,11 +101,9 @@ class AxonExtensionSpec() extends TestKit(ActorSystem("AxonExtensionSpec")) with
       whenReady(axonAkkaBridge subscribe probe.ref) { answer =>
         answer shouldBe Success("OK")
       }
-      whenReady(axonAkkaBridge subscribe probe.ref) { answer =>
-        answer match {
-          case Failure(any) => // do nothing
-          case Success(msg) => fail("Subscribing a second time should give an error")
-        }
+      whenReady(axonAkkaBridge subscribe probe.ref) {
+        case Failure(any) => // do nothing
+        case Success(msg) => fail("Subscribing a second time should give an error")
       }
       eventBus publish eventMessage("only one message")
       probe expectMsg "only one message"
