@@ -1,28 +1,31 @@
 package org.axonframework.scynapse.akka
 
+import java.util
+import java.util.function.BiFunction
+
 import akka.actor._
+import org.axonframework.common.Registration
 
 import scala.util.{Failure, Success}
-import org.axonframework.eventhandling.{EventListener, EventMessage, EventBus => AxonEventBus}
+import org.axonframework.eventhandling.{EventMessage, EventBus => AxonEventBus}
+import org.axonframework.messaging.{Message, MessageDispatchInterceptor}
 
+import scala.collection.mutable
 
 case class SubscriptionError(msg: String) extends RuntimeException(msg)
 case class SubscriptionPublishingError(msg: String, cause: Throwable) extends RuntimeException(msg, cause)
 
-
-private[scynapse] class ActorEventListenerPayloadPublisher(ref: ActorRef) extends EventListener {
-    def handle(msg: EventMessage[_]) = {
-        ref ! msg.getPayload
+private[scynapse] class DispatchPayloadToAkkaInterceptor[T <: Message[_]](dispatchTo: ActorRef) extends MessageDispatchInterceptor[T] {
+    override def handle(messages: util.List[T]): BiFunction[Integer, T, T] = (i, t) => {
+        dispatchTo ! t.getPayload
+        t
     }
 }
 
-private[scynapse] class ActorEventListenerFullPublisher(ref: ActorRef) extends EventListener {
-    def handle(msg: EventMessage[_]) = {
-        try {
-            ref ! msg
-        } catch {
-            case ex: Exception => throw SubscriptionPublishingError(s"$msg could not be sent to Actor ${ref.path}", ex)
-        }
+private[scynapse] class DispatchMessageToAkkaInterceptor[T <: Message[_]](dispatchTo: ActorRef) extends MessageDispatchInterceptor[T] {
+    override def handle(messages: util.List[T]): BiFunction[Integer, T, T] = (i, t) => {
+        dispatchTo ! t
+        t
     }
 }
 
@@ -56,7 +59,13 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
 
     import SubscriptionManager._
 
-    var subscriptions: Map[ActorRef, EventListener] = Map()
+    var subscriptions: mutable.Map[ActorRef, Registration] = mutable.Map()
+
+//    context.system.registerOnTermination(() => {
+//        context.system.log.info("system terminated, stopping all eventbus registrations")
+//        subscriptions.foreach(i => i._2.close())
+//        subscriptions.clear()
+//    })
 
     def receive = {
         case Subscribe(ref, ofType) =>
@@ -65,12 +74,11 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
                     sender ! Failure(SubscriptionError(s"$ref is already subscribed to $eventBus"))
                 case None =>
                     val listener = ofType match {
-                        case TypeOfEvent.Payload => new ActorEventListenerPayloadPublisher(ref)
-                        case TypeOfEvent.Full => new ActorEventListenerFullPublisher(ref)
+                        case TypeOfEvent.Payload => new DispatchPayloadToAkkaInterceptor[EventMessage[_]](ref)
+                        case TypeOfEvent.Full => new DispatchMessageToAkkaInterceptor[EventMessage[_]](ref)
                     }
-                    //TODO check how eventbus impl works nowadays
-                    //eventBus.subscribe(listener)
-                    subscriptions += ref -> listener
+                    val registration = eventBus.registerDispatchInterceptor(listener)
+                    subscriptions += ref -> registration
                     context watch ref
                     sender ! Success("OK")
             }
@@ -78,8 +86,8 @@ private[scynapse] class SubscriptionManager(eventBus: AxonEventBus)
         case Unsubscribe(ref) =>
             subscriptions.get(ref) match {
                 case Some(el) =>
-                    //eventBus.unsubscribe(el)
-                    subscriptions -= ref
+                    el.close()
+                    subscriptions.remove(ref)
                     context unwatch ref
                     sender ! Success("OK")
                 case None =>

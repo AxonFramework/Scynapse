@@ -37,10 +37,10 @@ object AxonEventBusExtension extends ExtensionId[AxonEventBusExtension]
 private[scynapse] trait AxonAkkaBridge {
   def eventBus: AxonEventBus
 
-  def subscribe(ref: ActorRef): Try[_]
-  def subscribeEvent(ref: ActorRef): Try[_]
-  def unsubscribe(ref: ActorRef): Try[_]
-  def isSubscribed(ref: ActorRef): Boolean
+  def subscribe(ref: ActorRef): Future[_]
+  def subscribeEvent(ref: ActorRef): Future[_]
+  def unsubscribe(ref: ActorRef): Future[_]
+  def isSubscribed(ref: ActorRef): Future[_]
 }
 
 
@@ -59,48 +59,40 @@ class AxonEventBusExtension(system: ActorSystem) extends Extension {
     * @return a [[org.axonframework.scynapse.akka.AxonAkkaBridge]]
     */
   def forEventBus(bus: AxonEventBus) = new AxonAkkaBridge {
-//    import SubscriptionManager._
+    import SubscriptionManager._
+
     implicit val timeout = Timeout(1 second)
     val eventBus: AxonEventBus = bus
-    var subscriptions: mutable.Map[ActorRef, Registration] = mutable.Map()
-
     val manager = system.actorOf(SubscriptionManager.props(eventBus))
+
+    system.registerOnTermination(() => {
+      system.stop(manager)
+    })
 
     /**
      * subscribe to the eventbus and the actor will receive only the typed payload of the events
      * @param ref ActorRef that will receive the events
      */
-    def subscribe(ref: ActorRef) = {
-      Try {
-        val registration = bus.registerDispatchInterceptor(new DispatchToAkkaInterceptor[EventMessage[_]](ref))
-        subscriptions += ((ref, registration))
-      }
-    }
+    def subscribe(ref: ActorRef) =
+      manager ? Subscribe(ref)
+
 
     /**
      * subscribe to the eventbus and the actor will receive the full DomainEventMessage
      * @see org.axonframework.domain.DomainEventMessage
      * @param ref ActorRef that will receive the DomainEventMessages
      */
-    def subscribeEvent(ref: ActorRef) = {
-      Try {
-        val registration = bus.registerDispatchInterceptor(new DispatchToAkkaInterceptor[EventMessage[_]](ref))
-        subscriptions.+=((ref, registration))
-      }
-    }
+    def subscribeEvent(ref: ActorRef) =
+      manager ? Subscribe(ref, SubscriptionManager.TypeOfEvent.Full)
+
 
     def unsubscribe(ref: ActorRef) =
-      subscriptions.remove(ref).map(r => {
-          Try(r.close())
-      }).get
-
+      manager ? Unsubscribe(ref)
 
     def isSubscribed(ref: ActorRef) =
-      subscriptions.contains(ref)
-      //Await.result((manager ? CheckSubscription(ref)).mapTo[Boolean], timeout.duration)
+      manager ? CheckSubscription(ref)
   }
 }
 
-class DispatchToAkkaInterceptor[T <: Message[_]](dispatchTo: ActorRef) extends MessageDispatchInterceptor[T] {
-  override def handle(messages: util.List[T]): BiFunction[Integer, T, T]= ???
-}
+
+
