@@ -1,51 +1,24 @@
 package org.axonframework.scynapse.akka
 
-import java.util
-
 import akka.actor._
 import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import akka.util.Timeout
 
-import scala.concurrent.{Await, TimeoutException}
-import org.scalatest.Entry
-import org.axonframework.commandhandling.{CommandHandler, CommandMessage, SimpleCommandBus}
+import org.scalatest.{BeforeAndAfterAll, Entry, Matchers, WordSpecLike}
+import org.axonframework.commandhandling.{CommandMessage, GenericCommandMessage, SimpleCommandBus}
 import org.axonframework.messaging.{Message, MessageHandler, MetaData}
+import org.scalatest.concurrent.ScalaFutures
 
+class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) with ImplicitSender
+  with WordSpecLike with Matchers with BeforeAndAfterAll with ScalaFutures {
 
-class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
   trait Ctx {
-    case class AddNumbersCmd(x: Int, y: Int) extends CommandMessage[AddNumbersCmd] {
-      override def withMetaData(metaData: util.Map[String, _]): CommandMessage[AddNumbersCmd] = ???
+    case class AddNumbersPayload(x: Int, y: Int)
+    case class AddNumbersCmd(payload: AddNumbersPayload) extends GenericCommandMessage[AddNumbersPayload](payload)
 
-      override def andMetaData(metaData: util.Map[String, _]): CommandMessage[AddNumbersCmd] = ???
-
-      override def getCommandName: String = this.getClass.getSimpleName
-
-      override def getIdentifier: String = ???
-
-      override def getPayloadType: Class[AddNumbersCmd] = ???
-
-      override def getPayload: AddNumbersCmd = ???
-
-      override def getMetaData: MetaData = ???
-    }
-
-    case class LogMessageCmd(message: String) extends CommandMessage[LogMessageCmd] {
-
-      override def withMetaData(metaData: util.Map[String, _]): CommandMessage[LogMessageCmd] = ???
-
-      override def andMetaData(metaData: util.Map[String, _]): CommandMessage[LogMessageCmd] = ???
-
-      override def getCommandName: String = this.getClass.getSimpleName
-
-      override def getIdentifier: String = ???
-
-      override def getPayloadType: Class[LogMessageCmd] = ???
-
-      override def getPayload: LogMessageCmd = ???
-
-      override def getMetaData: MetaData = ???
-    }
+    case class LogMessagePayload(message: String)
+    case class LogMessageCmd(payload: LogMessagePayload) extends GenericCommandMessage[LogMessagePayload](payload)
 
     case class Result(x: Any)
 
@@ -62,7 +35,7 @@ class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
     val addNumbersHandler =
       cmdHandler { (msg: CommandMessage[_]) => {
         msg.getPayload() match {
-          case p: AddNumbersCmd => p.x + p.y
+          case p: AddNumbersPayload => p.x + p.y
           case other => //
         }
       } }
@@ -70,55 +43,50 @@ class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
     def forwardingHandler[T](ref: ActorRef) =
       cmdHandler { (msg: CommandMessage[_]) => ref ! msg.getPayload }
 
-    commandBus.subscribe(classOf[AddNumbersCmd].getName, addNumbersHandler)
-    commandBus.subscribe(classOf[LogMessageCmd].getName,
+    commandBus.subscribe(classOf[AddNumbersPayload].getName, addNumbersHandler)
+    commandBus.subscribe(classOf[LogMessagePayload].getName,
       forwardingHandler[LogMessageCmd](probe.ref))
 
     val cmdGateway = system.actorOf(CommandGatewayActor.props(commandBus))
   }
 
-  behavior of "Akka-based Axon Command gateway"
-
-  it should "forward commands to Command Bus" in new Ctx {
-    cmdGateway ! LogMessageCmd("hi")
-    probe expectMsg LogMessageCmd("hi")
+  override def afterAll {
+    TestKit.shutdownActorSystem(system)
   }
 
-  it should "receive command result back" in new Ctx {
-    val resFuture = (cmdGateway ? AddNumbersCmd(5, 4)).mapTo[Result]
-    Await.result(resFuture, timeout.duration) shouldBe Result(9)
-  }
+  "An Axon <-> Akka Command gateway" must {
+    import scala.concurrent.duration._
+    implicit val timeout = Timeout(5.seconds)
+    val probe = TestProbe()
 
-//  it should "not receive any result if cmd handler returns null" in new Ctx {
-//    case class NullCmd() extends CommandMessage[NullCmd]
-//    commandBus.subscribe(classOf[NullCmd].getName, nullHandler[NullCmd])
-//
-//    cmdGateway.tell(NullCmd(), probe.ref)
-//    probe expectNoMsg
-//  }
-
-  it should "allow to pass command metadata" in new Ctx {
-    case class MetaCmd(data: String) extends CommandMessage[MetaCmd] {
-      override def withMetaData(metaData: util.Map[String, _]): CommandMessage[MetaCmd] = ???
-
-      override def andMetaData(metaData: util.Map[String, _]): CommandMessage[MetaCmd] = ???
-
-      override def getCommandName: String = this.getClass.getSimpleName
-
-      override def getIdentifier: String = ???
-
-      override def getPayloadType: Class[MetaCmd] = ???
-
-      override def getPayload: MetaCmd = ???
-
-      override def getMetaData: MetaData = ???
+    "forward commands to Command Bus" in new Ctx {
+      cmdGateway ! LogMessageCmd(LogMessagePayload("hi"))
+      probe expectMsg LogMessagePayload("hi")
     }
 
-    commandBus.subscribe(classOf[MetaCmd].getName,
-      cmdHandler { (msg: CommandMessage[_]) =>
-        probe.ref ! msg.getMetaData
-      })
-    cmdGateway ! CommandGatewayActor.WithMeta(MetaCmd("hi"), Map("userId" -> 120))
-    probe.expectMsgType[MetaData] should contain (Entry("userId", 120))
+    "receive command result back" in new Ctx {
+      whenReady(cmdGateway ? AddNumbersCmd(AddNumbersPayload(5, 4))) { answer => answer shouldBe Result(9)}
+    }
+
+    // "not receive any result if cmd handler returns null" in new Ctx {
+    //    case class NullCmd() extends CommandMessage[NullCmd]
+    //    commandBus.subscribe(classOf[NullCmd].getName, nullHandler[NullCmd])
+    //
+    //    cmdGateway.tell(NullCmd(), probe.ref)
+    //    probe expectNoMsg
+    //  }
+
+    "allow to pass command metadata" in new Ctx {
+
+      case class MetaPayload(data: String)
+      case class MetaCmd(payload: MetaPayload) extends GenericCommandMessage[MetaPayload](payload)
+
+      commandBus.subscribe(classOf[MetaPayload].getName,
+        cmdHandler { (msg: CommandMessage[_]) =>
+          probe.ref ! msg.getMetaData
+        })
+      cmdGateway ! CommandGatewayActor.WithMeta(MetaCmd(MetaPayload("hi")), Map("userId" -> 120))
+      probe.expectMsgType[MetaData] should contain(Entry("userId", 120))
+    }
   }
 }
