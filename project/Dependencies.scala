@@ -13,4 +13,5 @@ object Dependencies {
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % akkaV
   val hamcrest = "org.hamcrest" % "hamcrest-core" % "1.3"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 }

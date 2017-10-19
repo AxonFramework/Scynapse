@@ -62,7 +62,8 @@ val scynapseAkka = (project in file("scynapse-akka"))
       libraryDependencies ++= Seq(
         Dependencies.akkaActor,
         Dependencies.akkaTestkit % "test",
-        Dependencies.scalaTest % "test"))
+        Dependencies.scalaTest % "test",
+        Dependencies.logback % "test"))
 
 val scynapseTest = (project in file("scynapse-test"))
   .dependsOn(scynapseCore)

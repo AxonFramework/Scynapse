@@ -42,9 +42,10 @@ class CommandGatewayActor(axonCommandBus: CommandBus) extends Actor with ActorLo
 
   def receive = {
     case cmdMessage: CommandMessage[_] =>
-      val respondTo = sender
-      for(x <- dispatchMessage(cmdMessage) if x != null)
+      val respondTo = sender()
+      for(x <- dispatchMessage(cmdMessage) if x != null) {
         respondTo ! x
+      }
 
     case WithMeta(cmd, meta) =>
       self forward asCommandMessage(cmd, meta)

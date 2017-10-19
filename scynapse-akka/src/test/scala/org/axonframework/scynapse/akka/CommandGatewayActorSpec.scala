@@ -20,6 +20,8 @@ class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) 
     case class LogMessagePayload(message: String)
     case class LogMessageCmd(payload: LogMessagePayload) extends GenericCommandMessage[LogMessagePayload](payload)
 
+    case class NullPayload()
+
     case class Result(x: Any)
 
     val probe = TestProbe()
@@ -27,15 +29,18 @@ class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) 
     def cmdHandler[T <: Message[_], R](f: T => R): MessageHandler[T] =
       (message: T) => Result(f(message))
 
-//    def nullHandler[T]: MessageHandler[T] =
-//      (message: CommandMessage[_]) => null
+    def nullHandler[T <: Message[_], R](f: T => R): MessageHandler[T] =
+      (message: T) => null
+
+    val nullHandler2 = nullHandler { (msg: CommandMessage[_]) => { null }}
 
     val commandBus = new SimpleCommandBus()
 
-    val addNumbersHandler =
+    val payloadMatcherHandler =
       cmdHandler { (msg: CommandMessage[_]) => {
         msg.getPayload() match {
           case p: AddNumbersPayload => p.x + p.y
+          case p: NullPayload => null
           case other => //
         }
       } }
@@ -43,7 +48,7 @@ class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) 
     def forwardingHandler[T](ref: ActorRef) =
       cmdHandler { (msg: CommandMessage[_]) => ref ! msg.getPayload }
 
-    commandBus.subscribe(classOf[AddNumbersPayload].getName, addNumbersHandler)
+    commandBus.subscribe(classOf[AddNumbersPayload].getName, payloadMatcherHandler)
     commandBus.subscribe(classOf[LogMessagePayload].getName,
       forwardingHandler[LogMessageCmd](probe.ref))
 
@@ -64,19 +69,22 @@ class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) 
       probe expectMsg LogMessagePayload("hi")
     }
 
+    "forward payloads to the Command Bus" in new Ctx {
+      cmdGateway ! LogMessagePayload("hi")
+      probe expectMsg LogMessagePayload("hi")
+    }
+
     "receive command result back" in new Ctx {
       whenReady(cmdGateway ? AddNumbersCmd(AddNumbersPayload(5, 4))) { answer => answer shouldBe Result(9)}
     }
 
-    // "not receive any result if cmd handler returns null" in new Ctx {
-    //    case class NullCmd() extends CommandMessage[NullCmd]
-    //    commandBus.subscribe(classOf[NullCmd].getName, nullHandler[NullCmd])
-    //
-    //    cmdGateway.tell(NullCmd(), probe.ref)
-    //    probe expectNoMsg
-    //  }
+     "not receive any result if cmd handler returns null" in new Ctx {
+        commandBus.subscribe(classOf[NullPayload].getName, nullHandler2)
+        cmdGateway.tell(NullPayload(), probe.ref)
+        probe expectNoMsg
+      }
 
-    "allow to pass command metadata" in new Ctx {
+    "allow to pass command payloads with metadata" in new Ctx {
 
       case class MetaPayload(data: String)
       case class MetaCmd(payload: MetaPayload) extends GenericCommandMessage[MetaPayload](payload)
