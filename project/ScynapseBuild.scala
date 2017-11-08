@@ -1,12 +1,12 @@
 import sbt._
 import Keys._
-import sbtrelease.ReleasePlugin._
+import sbtrelease.ReleasePlugin
 
 object ScynapseBuild extends Build {
 
     import Deps._
 
-    lazy val basicSettings = seq(
+    lazy val basicSettings = Seq(
         organization := "org.axonframework.scynapse",
         description := "Scala add-on to the Axon framework",
 
@@ -20,9 +20,9 @@ object ScynapseBuild extends Build {
             "-deprecation"
         )
 
-    ) ++ releaseSettings
+    )
 
-    lazy val moduleSettings = basicSettings ++ seq(
+    lazy val moduleSettings = basicSettings ++ Seq(
         publishMavenStyle := true,
         publishTo := {
             val nexus = "https://oss.sonatype.org/"
@@ -54,6 +54,7 @@ object ScynapseBuild extends Build {
 
     lazy val root = Project("scynapse-root", file("."))
       .settings(basicSettings: _*)
+      .enablePlugins(ReleasePlugin)
       .aggregate(scynapseCore, scynapseAkka, scynapseTest)
 
     lazy val scynapseCore = Project("scynapse-core", file("scynapse-core"))
@@ -87,9 +88,9 @@ object ScynapseBuild extends Build {
 object Deps {
 
     object V {
-        val scala = "2.11.7"
-        val axon = "2.4.3"
-        val akka = "2.3.12"
+        val scala = "2.11.8"
+        val axon = "2.4.6"
+        val akka = "2.5.6"
     }
 
     val axonCore = "org.axonframework" % "axon-core" % V.axon
