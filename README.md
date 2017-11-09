@@ -122,19 +122,19 @@ In order to make use of the the scynapse framework, you need to include in your 
 For Scynapse core:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-core"           % 0.5.5 
+        "org.axonframework.scynapse"        %% "scynapse-core"           % 0.5.6
     )
 
 For Scynapse akka:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-akka"           % 0.5.5
+        "org.axonframework.scynapse"        %% "scynapse-akka"           % 0.5.6
     )
 
 For Scynapse test:
 
     libraryDependencies ++= Seq(
-        "org.axonframework.scynapse"        %% "scynapse-test"           % 0.5.5 % "test"
+        "org.axonframework.scynapse"        %% "scynapse-test"           % 0.5.6 % "test"
     )
 
 
