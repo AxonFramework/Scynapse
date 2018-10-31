@@ -35,16 +35,17 @@ class CommandGatewayActor(axonCommandBus: CommandBus) extends Actor with ActorLo
   }
 
   def dispatchMessage[T](cmd: CommandMessage[T]): Future[Any] = {
-    val pc = new PromisingCallback[Any]
+    val pc = new PromisingCallback[T, Any]
     axonCommandBus.dispatch(cmd, pc)
     pc.future
   }
 
   def receive = {
     case cmdMessage: CommandMessage[_] =>
-      val respondTo = sender
-      for(x <- dispatchMessage(cmdMessage) if x != null)
+      val respondTo = sender()
+      for(x <- dispatchMessage(cmdMessage) if x != null) {
         respondTo ! x
+      }
 
     case WithMeta(cmd, meta) =>
       self forward asCommandMessage(cmd, meta)

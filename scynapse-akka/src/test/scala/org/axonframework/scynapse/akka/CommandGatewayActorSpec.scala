@@ -2,82 +2,99 @@ package org.axonframework.scynapse.akka
 
 import akka.actor._
 import akka.pattern.ask
-import akka.testkit.{TestProbe, TestKit, ImplicitSender}
-import scala.concurrent.{Await, TimeoutException}
-import org.scalatest.Entry
-import org.axonframework.domain.{MetaData => AxonMetaData}
-import org.axonframework.commandhandling.{
-  CommandBus, SimpleCommandBus,
-  CommandHandler, CommandMessage}
-import org.axonframework.unitofwork.UnitOfWork
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import akka.util.Timeout
 
+import org.scalatest.{BeforeAndAfterAll, Entry, Matchers, WordSpecLike}
+import org.axonframework.commandhandling.{CommandMessage, GenericCommandMessage, SimpleCommandBus}
+import org.axonframework.messaging.{Message, MessageHandler, MetaData}
+import org.scalatest.concurrent.ScalaFutures
 
-class CommandGatewayActorSpec extends ScynapseAkkaSpecBase {
+class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) with ImplicitSender
+  with WordSpecLike with Matchers with BeforeAndAfterAll with ScalaFutures {
+
   trait Ctx {
-    case class AddNumbersCmd(x: Int, y: Int)
-    case class LogMessageCmd(message: String)
+    case class AddNumbersPayload(x: Int, y: Int)
+    case class AddNumbersCmd(payload: AddNumbersPayload) extends GenericCommandMessage[AddNumbersPayload](payload)
+
+    case class LogMessagePayload(message: String)
+    case class LogMessageCmd(payload: LogMessagePayload) extends GenericCommandMessage[LogMessagePayload](payload)
+
+    case class NullPayload()
+
     case class Result(x: Any)
 
     val probe = TestProbe()
 
-    def cmdHandler[T, R <: Any](f: CommandMessage[T] => R): CommandHandler[T] =
-      new CommandHandler[T] {
-        def handle(cmd: CommandMessage[T], uow: UnitOfWork): AnyRef =
-          Result(f(cmd))
-      }
+    def cmdHandler[T <: Message[_], R](f: T => R): MessageHandler[T] =
+      (message: T) => Result(f(message))
 
-    def nullHandler[T]: CommandHandler[T] =
-      new CommandHandler[T] {
-        def handle(cmd: CommandMessage[T], uow: UnitOfWork) = {
-          null
-        }
-      }
+    def nullHandler[T <: Message[_], R](f: T => R): MessageHandler[T] =
+      (message: T) => null
+
+    val nullHandler2 = nullHandler { (msg: CommandMessage[_]) => { null }}
 
     val commandBus = new SimpleCommandBus()
 
-    val addNumbersHandler =
-      cmdHandler { (msg: CommandMessage[AddNumbersCmd]) => {
-        val cmd = msg.getPayload
-        cmd.x + cmd.y
+    val payloadMatcherHandler =
+      cmdHandler { (msg: CommandMessage[_]) => {
+        msg.getPayload() match {
+          case p: AddNumbersPayload => p.x + p.y
+          case p: NullPayload => null
+          case other => //
+        }
       } }
 
     def forwardingHandler[T](ref: ActorRef) =
-      cmdHandler { (msg: CommandMessage[T]) => ref ! msg.getPayload }
+      cmdHandler { (msg: CommandMessage[_]) => ref ! msg.getPayload }
 
-    commandBus.subscribe(classOf[AddNumbersCmd].getName, addNumbersHandler)
-    commandBus.subscribe(classOf[LogMessageCmd].getName,
+    commandBus.subscribe(classOf[AddNumbersPayload].getName, payloadMatcherHandler)
+    commandBus.subscribe(classOf[LogMessagePayload].getName,
       forwardingHandler[LogMessageCmd](probe.ref))
 
     val cmdGateway = system.actorOf(CommandGatewayActor.props(commandBus))
   }
 
-  behavior of "Akka-based Axon Command gateway"
-
-  it should "forward commands to Command Bus" in new Ctx {
-    cmdGateway ! LogMessageCmd("hi")
-    probe expectMsg LogMessageCmd("hi")
+  override def afterAll {
+    TestKit.shutdownActorSystem(system)
   }
 
-  it should "receive command result back" in new Ctx {
-    val resFuture = (cmdGateway ? AddNumbersCmd(5, 4)).mapTo[Result]
-    Await.result(resFuture, timeout.duration) shouldBe Result(9)
-  }
+  "An Axon <-> Akka Command gateway" must {
+    import scala.concurrent.duration._
+    implicit val timeout = Timeout(5.seconds)
+    val probe = TestProbe()
 
-  it should "not receive any result if cmd handler returns null" in new Ctx {
-    case class NullCmd()
-    commandBus.subscribe(classOf[NullCmd].getName, nullHandler[NullCmd])
+    "forward commands to Command Bus" in new Ctx {
+      cmdGateway ! LogMessageCmd(LogMessagePayload("hi"))
+      probe expectMsg LogMessagePayload("hi")
+    }
 
-    cmdGateway.tell(NullCmd(), probe.ref)
-    probe expectNoMsg
-  }
+    "forward payloads to the Command Bus" in new Ctx {
+      cmdGateway ! LogMessagePayload("hi")
+      probe expectMsg LogMessagePayload("hi")
+    }
 
-  it should "allow to pass command metadata" in new Ctx {
-    case class MetaCmd(data: String)
-    commandBus.subscribe(classOf[MetaCmd].getName,
-      cmdHandler { (msg: CommandMessage[MetaCmd]) =>
-        probe.ref ! msg.getMetaData
-      })
-    cmdGateway ! CommandGatewayActor.WithMeta(MetaCmd("hi"), Map("userId" -> 120))
-    probe.expectMsgType[AxonMetaData] should contain (Entry("userId", 120))
+    "receive command result back" in new Ctx {
+      whenReady(cmdGateway ? AddNumbersCmd(AddNumbersPayload(5, 4))) { answer => answer shouldBe Result(9)}
+    }
+
+     "not receive any result if cmd handler returns null" in new Ctx {
+        commandBus.subscribe(classOf[NullPayload].getName, nullHandler2)
+        cmdGateway.tell(NullPayload(), probe.ref)
+        probe expectNoMsg
+      }
+
+    "allow to pass command payloads with metadata" in new Ctx {
+
+      case class MetaPayload(data: String)
+      case class MetaCmd(payload: MetaPayload) extends GenericCommandMessage[MetaPayload](payload)
+
+      commandBus.subscribe(classOf[MetaPayload].getName,
+        cmdHandler { (msg: CommandMessage[_]) =>
+          probe.ref ! msg.getMetaData
+        })
+      cmdGateway ! CommandGatewayActor.WithMeta(MetaCmd(MetaPayload("hi")), Map("userId" -> 120))
+      probe.expectMsgType[MetaData] should contain(Entry("userId", 120))
+    }
   }
 }

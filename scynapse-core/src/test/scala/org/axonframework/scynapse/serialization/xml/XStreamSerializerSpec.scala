@@ -1,7 +1,6 @@
 package org.axonframework.scynapse.serialization.xml
 
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.{FlatSpec, MustMatchers}
 
 case class ListTestEvent(elements: List[String])
 

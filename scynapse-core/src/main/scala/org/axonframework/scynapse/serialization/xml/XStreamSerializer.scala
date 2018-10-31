@@ -1,6 +1,6 @@
 package org.axonframework.scynapse.serialization.xml
 
-import org.axonframework.serializer.xml.{XStreamSerializer => AxonXStreamSerializer}
+import org.axonframework.serialization.xml.{XStreamSerializer => AxonXStreamSerializer}
 
 /**
  * XStream serializer registration.

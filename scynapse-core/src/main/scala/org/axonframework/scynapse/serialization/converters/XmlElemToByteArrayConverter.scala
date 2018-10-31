@@ -1,7 +1,9 @@
 package org.axonframework.scynapse.serialization.converters
 
 import java.nio.charset.Charset
-import org.axonframework.serializer.AbstractContentTypeConverter
+
+import org.axonframework.serialization.ContentTypeConverter
+
 import scala.xml.Elem
 
 /**
@@ -11,19 +13,19 @@ import scala.xml.Elem
  * It is not required to register this Converter in any way. This is done via
  * the file "org.axonframework.serializer.ContentTypeConverter" in META-INF/services of this package
  */
-class XmlElemToByteArrayConverter extends AbstractContentTypeConverter[Elem, Array[Byte]] {
+class XmlElemToByteArrayConverter extends Object with ContentTypeConverter[Elem, Array[Byte]] {
 
   private val UTF8: Charset = Charset.forName("UTF-8")
 
-  def expectedSourceType: Class[Elem] = {
+  override def expectedSourceType: Class[Elem] = {
     classOf[Elem]
   }
 
-  def targetType: Class[Array[Byte]] = {
+  override def targetType: Class[Array[Byte]] = {
     classOf[Array[Byte]]
   }
 
-  def convert(original: Elem): Array[Byte] = {
+  override def convert(original: Elem): Array[Byte] = {
     original.buildString(true).getBytes(UTF8)
   }
 }
