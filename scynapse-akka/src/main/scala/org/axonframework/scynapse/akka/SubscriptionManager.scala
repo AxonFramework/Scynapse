@@ -16,14 +16,16 @@ case class SubscriptionError(msg: String) extends RuntimeException(msg)
 case class SubscriptionPublishingError(msg: String, cause: Throwable) extends RuntimeException(msg, cause)
 
 private[scynapse] class DispatchPayloadToAkkaInterceptor[T <: Message[_]](dispatchTo: ActorRef) extends MessageDispatchInterceptor[T] {
-    override def handle(messages: util.List[T]): BiFunction[Integer, T, T] = (i, t) => {
+
+    override def handle(messages: util.List[_ <: T]): BiFunction[Integer, T, T] = (i, t) => {
         dispatchTo ! t.getPayload
         t
     }
 }
 
 private[scynapse] class DispatchMessageToAkkaInterceptor[T <: Message[_]](dispatchTo: ActorRef) extends MessageDispatchInterceptor[T] {
-    override def handle(messages: util.List[T]): BiFunction[Integer, T, T] = (i, t) => {
+
+    override def handle(messages: util.List[_ <: T]): BiFunction[Integer, T, T] = (i,t) => {
         dispatchTo ! t
         t
     }

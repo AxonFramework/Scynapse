@@ -2,9 +2,9 @@ import sbt._
 
 object Dependencies {
 
-  lazy val scalaV = "2.12.3"
-  lazy val axonV = "3.0.5"
-  lazy val akkaV = "2.5.6"
+  lazy val scalaV = "2.12.7"
+  lazy val axonV = "3.4"
+  lazy val akkaV = "2.5.17"
 
   val axonCore = "org.axonframework" % "axon-core" % axonV
   val axonTest = "org.axonframework" % "axon-test" % axonV
