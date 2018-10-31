@@ -10,8 +10,13 @@ import org.axonframework.commandhandling.{CommandMessage, GenericCommandMessage,
 import org.axonframework.messaging.{Message, MessageHandler, MetaData}
 import org.scalatest.concurrent.ScalaFutures
 
-class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) with ImplicitSender
-  with WordSpecLike with Matchers with BeforeAndAfterAll with ScalaFutures {
+class CommandGatewayActorSpec
+    extends TestKit(ActorSystem("AxonExtensionSpec"))
+    with ImplicitSender
+    with WordSpecLike
+    with Matchers
+    with BeforeAndAfterAll
+    with ScalaFutures {
 
   trait Ctx {
     case class AddNumbersPayload(x: Int, y: Int)
@@ -32,25 +37,30 @@ class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) 
     def nullHandler[T <: Message[_], R](f: T => R): MessageHandler[T] =
       (message: T) => null
 
-    val nullHandler2 = nullHandler { (msg: CommandMessage[_]) => { null }}
+    val nullHandler2 = nullHandler { (msg: CommandMessage[_]) =>
+      { null }
+    }
 
     val commandBus = new SimpleCommandBus()
 
     val payloadMatcherHandler =
-      cmdHandler { (msg: CommandMessage[_]) => {
-        msg.getPayload() match {
-          case p: AddNumbersPayload => p.x + p.y
-          case p: NullPayload => null
-          case other => //
+      cmdHandler { (msg: CommandMessage[_]) =>
+        {
+          msg.getPayload() match {
+            case p: AddNumbersPayload => p.x + p.y
+            case p: NullPayload       => null
+            case other                => //
+          }
         }
-      } }
+      }
 
     def forwardingHandler[T](ref: ActorRef) =
-      cmdHandler { (msg: CommandMessage[_]) => ref ! msg.getPayload }
+      cmdHandler { (msg: CommandMessage[_]) =>
+        ref ! msg.getPayload
+      }
 
     commandBus.subscribe(classOf[AddNumbersPayload].getName, payloadMatcherHandler)
-    commandBus.subscribe(classOf[LogMessagePayload].getName,
-      forwardingHandler[LogMessageCmd](probe.ref))
+    commandBus.subscribe(classOf[LogMessagePayload].getName, forwardingHandler[LogMessageCmd](probe.ref))
 
     val cmdGateway = system.actorOf(CommandGatewayActor.props(commandBus))
   }
@@ -62,7 +72,7 @@ class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) 
   "An Axon <-> Akka Command gateway" must {
     import scala.concurrent.duration._
     implicit val timeout = Timeout(5.seconds)
-    val probe = TestProbe()
+    val probe            = TestProbe()
 
     "forward commands to Command Bus" in new Ctx {
       cmdGateway ! LogMessageCmd(LogMessagePayload("hi"))
@@ -75,24 +85,25 @@ class CommandGatewayActorSpec extends TestKit(ActorSystem("AxonExtensionSpec")) 
     }
 
     "receive command result back" in new Ctx {
-      whenReady(cmdGateway ? AddNumbersCmd(AddNumbersPayload(5, 4))) { answer => answer shouldBe Result(9)}
+      whenReady(cmdGateway ? AddNumbersCmd(AddNumbersPayload(5, 4))) { answer =>
+        answer shouldBe Result(9)
+      }
     }
 
-     "not receive any result if cmd handler returns null" in new Ctx {
-        commandBus.subscribe(classOf[NullPayload].getName, nullHandler2)
-        cmdGateway.tell(NullPayload(), probe.ref)
-        probe expectNoMsg
-      }
+    "not receive any result if cmd handler returns null" in new Ctx {
+      commandBus.subscribe(classOf[NullPayload].getName, nullHandler2)
+      cmdGateway.tell(NullPayload(), probe.ref)
+      probe expectNoMsg
+    }
 
     "allow to pass command payloads with metadata" in new Ctx {
 
       case class MetaPayload(data: String)
       case class MetaCmd(payload: MetaPayload) extends GenericCommandMessage[MetaPayload](payload)
 
-      commandBus.subscribe(classOf[MetaPayload].getName,
-        cmdHandler { (msg: CommandMessage[_]) =>
-          probe.ref ! msg.getMetaData
-        })
+      commandBus.subscribe(classOf[MetaPayload].getName, cmdHandler { (msg: CommandMessage[_]) =>
+        probe.ref ! msg.getMetaData
+      })
       cmdGateway ! CommandGatewayActor.WithMeta(MetaCmd(MetaPayload("hi")), Map("userId" -> 120))
       probe.expectMsgType[MetaData] should contain(Entry("userId", 120))
     }

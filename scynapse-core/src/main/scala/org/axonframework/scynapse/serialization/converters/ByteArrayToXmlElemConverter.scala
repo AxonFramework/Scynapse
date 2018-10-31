@@ -7,12 +7,12 @@ import org.axonframework.serialization.ContentTypeConverter
 import scala.xml.{Elem, XML}
 
 /**
- * This converter, together with the XmlElemToByteArrayConverter allow to deserialize
- * events to standard scala XML. This is used for Upcasting.
- *
- * It is not required to register this Converter in any way. This is done via
- * the file "org.axonframework.serializer.ContentTypeConverter" in META-INF/services of this package
- */
+  * This converter, together with the XmlElemToByteArrayConverter allow to deserialize
+  * events to standard scala XML. This is used for Upcasting.
+  *
+  * It is not required to register this Converter in any way. This is done via
+  * the file "org.axonframework.serializer.ContentTypeConverter" in META-INF/services of this package
+  */
 //class ByteArrayToXmlElemConverter extends AbstractContentTypeConverter[Array[Byte], Elem] {
 class ByteArrayToXmlElemConverter extends Object with ContentTypeConverter[Array[Byte], Elem] {
 

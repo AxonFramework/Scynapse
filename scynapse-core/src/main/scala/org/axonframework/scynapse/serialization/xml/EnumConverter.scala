@@ -4,25 +4,25 @@ import com.thoughtworks.xstream.converters.{UnmarshallingContext, MarshallingCon
 import com.thoughtworks.xstream.io.{HierarchicalStreamReader, HierarchicalStreamWriter}
 
 /**
- *  XStream converter for Scala Enumerations.
- */
+  *  XStream converter for Scala Enumerations.
+  */
 class EnumConverter extends Converter {
 
-    def canConvert(cls: Class[_]): Boolean = classOf[Enumeration#Value].isAssignableFrom(cls)
+  def canConvert(cls: Class[_]): Boolean = classOf[Enumeration#Value].isAssignableFrom(cls)
 
-    def marshal(source: Any, writer: HierarchicalStreamWriter, context: MarshallingContext) {
-        val v = source.asInstanceOf[Enumeration#Value]
+  def marshal(source: Any, writer: HierarchicalStreamWriter, context: MarshallingContext) {
+    val v = source.asInstanceOf[Enumeration#Value]
 
-        val enum = v.getClass.getField("$outer").get(v).asInstanceOf[Enumeration]
+    val enum = v.getClass.getField("$outer").get(v).asInstanceOf[Enumeration]
 
-        writer.addAttribute("in", enum.getClass.getName.stripSuffix("$"))
-        writer.addAttribute("name", v.toString)
-    }
+    writer.addAttribute("in", enum.getClass.getName.stripSuffix("$"))
+    writer.addAttribute("name", v.toString)
+  }
 
-    def unmarshal(reader: HierarchicalStreamReader, context: UnmarshallingContext): AnyRef = {
-        val enum = Class.forName(reader.getAttribute("in"))
-        enum
-          .getMethod("withName", classOf[String])
-          .invoke(enum, reader.getAttribute("name"))
-    }
+  def unmarshal(reader: HierarchicalStreamReader, context: UnmarshallingContext): AnyRef = {
+    val enum = Class.forName(reader.getAttribute("in"))
+    enum
+      .getMethod("withName", classOf[String])
+      .invoke(enum, reader.getAttribute("name"))
+  }
 }

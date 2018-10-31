@@ -7,29 +7,31 @@ import org.hamcrest.Matcher
 import org.axonframework.test.matchers.Matchers._
 
 /**
- *  Event matcher for use with a Scala test framework.
- */
+  *  Event matcher for use with a Scala test framework.
+  */
 trait EventMatchers {
-    def isEqualTo[T](o: T) = org.hamcrest.CoreMatchers.equalTo(o)
+  def isEqualTo[T](o: T) = org.hamcrest.CoreMatchers.equalTo(o)
 
-    def isLike(pf: => PartialFunction[Any, Boolean]) = new BaseMatcher[Any] {
+  def isLike(pf: => PartialFunction[Any, Boolean]) = new BaseMatcher[Any] {
 
-        def matches(item: Any) = pf.isDefinedAt(item) && pf.apply(item)
+    def matches(item: Any) = pf.isDefinedAt(item) && pf.apply(item)
 
-        def describeTo(description: Description) {
-            description.appendText("is like partially described expectation")
-        }
+    def describeTo(description: Description) {
+      description.appendText("is like partially described expectation")
     }
+  }
 
-    def noEvents = org.axonframework.test.matchers.Matchers.noEvents()
+  def noEvents = org.axonframework.test.matchers.Matchers.noEvents()
 
-    def allPayloadsOf(items: Any*) = {
-        payloadsMatching(listWithAllOf(
-            (items map isEqualTo): _*
-        ))
-    }
+  def allPayloadsOf(items: Any*) = {
+    payloadsMatching(
+      listWithAllOf(
+        (items map isEqualTo): _*
+      )
+    )
+  }
 
-    def withPayloads(matchers: Matcher[_]*) =
-        payloadsMatching(listWithAllOf(matchers: _*))
+  def withPayloads(matchers: Matcher[_]*) =
+    payloadsMatching(listWithAllOf(matchers: _*))
 
 }

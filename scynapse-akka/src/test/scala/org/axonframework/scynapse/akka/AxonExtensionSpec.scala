@@ -36,12 +36,16 @@ class TestDomainEventMessage[T](payload: T) extends DomainEventMessage[T] {
   override def getType: String = ???
 }
 
-class AxonExtensionSpec() extends TestKit(ActorSystem("AxonExtensionSpec")) with ImplicitSender
-  with WordSpecLike with Matchers with BeforeAndAfterAll with ScalaFutures {
-
+class AxonExtensionSpec()
+    extends TestKit(ActorSystem("AxonExtensionSpec"))
+    with ImplicitSender
+    with WordSpecLike
+    with Matchers
+    with BeforeAndAfterAll
+    with ScalaFutures {
 
   trait Ctx {
-    val eventBus = new SimpleEventBus()
+    val eventBus       = new SimpleEventBus()
     val axonAkkaBridge = AxonEventBusExtension(system) forEventBus eventBus
 
     def eventMessage[T](payload: T): GenericEventMessage[T] =
@@ -73,11 +77,11 @@ class AxonExtensionSpec() extends TestKit(ActorSystem("AxonExtensionSpec")) with
       eventBus publish domainEventMessage("hi")
       probe.expectMsgPF() {
         case msg: TestDomainEventMessage[_] => if (msg.getSequenceNumber == 1l) true else false
-        case other => false
+        case other                          => false
       }
     }
 
-    "check if actors are subscribed" in  new Ctx {
+    "check if actors are subscribed" in new Ctx {
       whenReady(axonAkkaBridge subscribe probe.ref) { answer =>
         answer shouldBe Success("OK")
       }
@@ -97,7 +101,7 @@ class AxonExtensionSpec() extends TestKit(ActorSystem("AxonExtensionSpec")) with
       probe expectNoMsg
     }
 
-    "not subscribe actors more than once" in  new Ctx {
+    "not subscribe actors more than once" in new Ctx {
       whenReady(axonAkkaBridge subscribe probe.ref) { answer =>
         answer shouldBe Success("OK")
       }
@@ -110,14 +114,14 @@ class AxonExtensionSpec() extends TestKit(ActorSystem("AxonExtensionSpec")) with
       probe expectNoMsg
     }
 
-     "unsubsribe actors on termination" in new Ctx {
-       whenReady(axonAkkaBridge subscribe probe.ref) { answer =>
-         answer shouldBe Success("OK")
-       }
+    "unsubsribe actors on termination" in new Ctx {
+      whenReady(axonAkkaBridge subscribe probe.ref) { answer =>
+        answer shouldBe Success("OK")
+      }
       system.stop(probe.ref)
       Thread.sleep(200) // wait for async inner stuff to occur
-      whenReady(axonAkkaBridge isSubscribed probe.ref) {
-        answer => answer shouldBe false
+      whenReady(axonAkkaBridge isSubscribed probe.ref) { answer =>
+        answer shouldBe false
       }
     }
 

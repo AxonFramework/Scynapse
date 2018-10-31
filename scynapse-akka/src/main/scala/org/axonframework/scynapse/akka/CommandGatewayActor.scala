@@ -8,7 +8,6 @@ import org.axonframework.scynapse.commandhandling.PromisingCallback
 import org.axonframework.commandhandling.CommandBus
 import org.axonframework.commandhandling.{CommandMessage, GenericCommandMessage}
 
-
 object CommandGatewayActor {
   type CommandMeta = Map[String, Any]
 
@@ -17,7 +16,6 @@ object CommandGatewayActor {
   def props(axonCommandBus: CommandBus) =
     Props(new CommandGatewayActor(axonCommandBus))
 }
-
 
 /**
   * Actor-based command gateway
@@ -43,7 +41,7 @@ class CommandGatewayActor(axonCommandBus: CommandBus) extends Actor with ActorLo
   def receive = {
     case cmdMessage: CommandMessage[_] =>
       val respondTo = sender()
-      for(x <- dispatchMessage(cmdMessage) if x != null) {
+      for (x <- dispatchMessage(cmdMessage) if x != null) {
         respondTo ! x
       }
 

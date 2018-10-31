@@ -17,12 +17,10 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import collection.JavaConverters._
 
-
 /**
   * The [[akka.actor.ExtensionId]] and [[akka.actor.ExtensionIdProvider]] for Axon extension
   */
-object AxonEventBusExtension extends ExtensionId[AxonEventBusExtension]
-                             with ExtensionIdProvider {
+object AxonEventBusExtension extends ExtensionId[AxonEventBusExtension] with ExtensionIdProvider {
 
   override def createExtension(system: ExtendedActorSystem): AxonEventBusExtension =
     new AxonEventBusExtension(system)
@@ -43,7 +41,6 @@ private[scynapse] trait AxonAkkaBridge {
   def isSubscribed(ref: ActorRef): Future[_]
 }
 
-
 /**
   * Axon extension
   *
@@ -61,30 +58,28 @@ class AxonEventBusExtension(system: ActorSystem) extends Extension {
   def forEventBus(bus: AxonEventBus) = new AxonAkkaBridge {
     import SubscriptionManager._
 
-    implicit val timeout = Timeout(1 second)
+    implicit val timeout       = Timeout(1 second)
     val eventBus: AxonEventBus = bus
-    val manager = system.actorOf(SubscriptionManager.props(eventBus))
+    val manager                = system.actorOf(SubscriptionManager.props(eventBus))
 
     system.registerOnTermination(() => {
       system.stop(manager)
     })
 
     /**
-     * subscribe to the eventbus and the actor will receive only the typed payload of the events
-     * @param ref ActorRef that will receive the events
-     */
+      * subscribe to the eventbus and the actor will receive only the typed payload of the events
+      * @param ref ActorRef that will receive the events
+      */
     def subscribe(ref: ActorRef) =
       manager ? Subscribe(ref)
 
-
     /**
-     * subscribe to the eventbus and the actor will receive the full DomainEventMessage
-     * @see org.axonframework.domain.DomainEventMessage
-     * @param ref ActorRef that will receive the DomainEventMessages
-     */
+      * subscribe to the eventbus and the actor will receive the full DomainEventMessage
+      * @see org.axonframework.domain.DomainEventMessage
+      * @param ref ActorRef that will receive the DomainEventMessages
+      */
     def subscribeEvent(ref: ActorRef) =
       manager ? Subscribe(ref, SubscriptionManager.TypeOfEvent.Full)
-
 
     def unsubscribe(ref: ActorRef) =
       manager ? Unsubscribe(ref)
@@ -93,6 +88,3 @@ class AxonEventBusExtension(system: ActorSystem) extends Extension {
       manager ? CheckSubscription(ref)
   }
 }
-
-
-
