@@ -59,8 +59,12 @@ val scynapseCore = (project in file("scynapse-core"))
   .settings(
     name := "scynapse-core",
       libraryDependencies ++= Seq(
-          Dependencies.axonCore,
+        Dependencies.axonConfig,
+        Dependencies.axonEventSourcing,
+        Dependencies.axonMessaging,
+        Dependencies.axonModelling,
         Dependencies.scalaXml,
+        Dependencies.axonTest % "test",
         Dependencies.scalaTest % "test"))
 
 val scynapseAkka = (project in file("scynapse-akka"))

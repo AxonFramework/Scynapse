@@ -1,6 +1,7 @@
 package org.axonframework.scynapse.serialization.xml
 
-import org.axonframework.serialization.xml.{XStreamSerializer => AxonXStreamSerializer}
+import org.axonframework.serialization.AbstractXStreamSerializer
+import org.axonframework.serialization.xml.XStreamSerializer
 
 /**
   * XStream serializer registration.
@@ -19,8 +20,17 @@ import org.axonframework.serialization.xml.{XStreamSerializer => AxonXStreamSeri
   *
   * You may use this XStreamSerializer without extension.
   */
-class XStreamSerializer extends AxonXStreamSerializer {
+public class ScalaXStreamSerializer extends XStreamSerializer {
   getXStream.alias("list", classOf[::[_]])
   getXStream.registerConverter(new ListConverter(getXStream.getMapper))
   getXStream.registerConverter(new EnumConverter)
+
+}
+
+object ScalaXStreamSerializer {
+
+  def build(): AbstractXStreamSerializer.Builder = {
+    new AbstractXStreamSerializer.Builder()
+  }
+
 }

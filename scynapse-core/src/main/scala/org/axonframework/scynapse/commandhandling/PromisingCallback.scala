@@ -1,6 +1,6 @@
 package org.axonframework.scynapse.commandhandling
 
-import org.axonframework.commandhandling.{CommandCallback, CommandMessage}
+import org.axonframework.commandhandling.{CommandCallback, CommandMessage, CommandResultMessage}
 
 import concurrent._
 
@@ -12,14 +12,18 @@ import concurrent._
   * @tparam[R] type of result of the command handling
   */
 class PromisingCallback[T, R] extends CommandCallback[T, R] {
+
   private val p = Promise[R]()
 
-  override def onSuccess(commandMessage: CommandMessage[_ <: T], result: R) = {
-    p.success(result)
-  }
-
-  override def onFailure(commandMessage: CommandMessage[_ <: T], cause: Throwable) = {
-    p.failure(cause)
+  override def onResult(
+    commandMessage: CommandMessage[_ <: T],
+    commandResultMessage: CommandResultMessage[_ <: R]
+  ): Unit = {
+    if (commandResultMessage.isExceptional) {
+      p.failure(commandResultMessage.exceptionResult())
+    } else {
+      p.success(commandResultMessage.getPayload)
+    }
   }
 
   def future = p.future

@@ -1,6 +1,6 @@
 package org.axonframework.scynapse
 
-import org.axonframework.commandhandling.TargetAggregateIdentifier
+import org.axonframework.modelling.command.TargetAggregateIdentifier
 
 import annotation.meta.getter
 
@@ -16,7 +16,7 @@ package object annotations {
     * If placed on a field, the field's value will be converted into an AggregateIdentifier instance identical to how a
     * method's return value is converted.
     *
-    * @see org.axonframework.commandhandling.TargetAggregateIdentifier
+    * @see org.axonframework.modelling.command.TargetAggregateIdentifier
     */
   type aggregateId = TargetAggregateIdentifier @getter
 }

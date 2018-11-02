@@ -1,6 +1,6 @@
 package org.axonframework.scynapse.annotations
 
-import org.axonframework.commandhandling.TargetAggregateIdentifier
+import org.axonframework.modelling.command.TargetAggregateIdentifier
 import org.scalatest.{FlatSpec, MustMatchers}
 
 class AggregateIdSpec extends FlatSpec with MustMatchers {
